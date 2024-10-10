@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+
 // ==========================================
 // GLOBAL CONSTANTS AND VARIABLES
 // ==========================================
@@ -175,10 +176,13 @@ var totalTurningAcceleration = 0;
 var forwardSpeed = 0;
 var turningSpeed = 0;
 
-var accForward = false;
-var accBackward = false;
-var turnRight = false;
-var turnLeft = false;
+var acceleration = {
+    accForward: false,
+    accBackward: false,
+    turnRight: false,
+    turnLeft: false
+};
+
 
 function moveForward() {
     totalForwardAcceleration += forwardAcceleration;
@@ -196,16 +200,16 @@ function handleMovement() {
     var finalTurningAcceleration = 0.0;
 
     // Forward/backward acceleration handling
-    if (accForward) {
+    if (acceleration.accForward) {
         totalForwardAcceleration = Math.min(totalForwardAcceleration + forwardAcceleration, maxForwardAcceleration);
-    } else if (accBackward) {
+    } else if (acceleration.accBackward) {
         totalForwardAcceleration = Math.max(totalForwardAcceleration + backwardAcceleration, maxBackwardAcceleration);
     }
 
     // Turning acceleration handling
-    if (turnLeft) {
+    if (acceleration.turnLeft) {
         totalTurningAcceleration = Math.min(totalTurningAcceleration + leftAcceleration, maxLeftTurningAcceleration);
-    } else if (turnRight) {
+    } else if (acceleration.turnRight) {
         totalTurningAcceleration = Math.max(totalTurningAcceleration + rightAcceleration, maxRightTurningAcceleration);
     }
 
@@ -320,23 +324,23 @@ document.addEventListener('keydown', (e) => {
     switch (e.keyCode) {
         case wKey:
             keyState.w = true;
-            accForward = true;
-            accBackward = false;
+            acceleration.accForward = true;
+            acceleration.accBackward = false;
             break;
         case sKey:
             keyState.s = true;
-            accBackward = true;
-            accForward = false;
+            acceleration.accBackward = true;
+            acceleration.accForward = false;
             break;
         case aKey:
             keyState.a = true;
-            turnLeft = true;
-            turnRight = false;
+            acceleration.turnLeft = true;
+            acceleration.turnRight = false;
             break;
         case dKey:
             keyState.d = true;
-            turnRight = true;
-            turnLeft = false;
+            acceleration.turnRight = true;
+            acceleration.turnLeft = false;
             break;
         default:
             break;
@@ -347,19 +351,19 @@ document.addEventListener('keyup', (e) => {
     switch (e.keyCode) {
         case wKey:
             keyState.w = false;
-            accForward = false;
+            acceleration.accForward = false;
             break;
         case sKey:
             keyState.s = false;
-            accBackward = false;
+            acceleration.accBackward = false;
             break;
         case aKey:
             keyState.a = false;
-            turnLeft = false;
+            acceleration.turnLeft = false;
             break;
         case dKey:
             keyState.d = false;
-            turnRight = false;
+            acceleration.turnRight = false;
             break;
         default:
             break;
@@ -367,13 +371,13 @@ document.addEventListener('keyup', (e) => {
 
     // Stop movement/turning when no keys are pressed
     if (!keyState.w && !keyState.s) {
-        accForward = false;
-        accBackward = false;
+        acceleration.accForward = false;
+        acceleration.accBackward = false;
     }
 
     if (!keyState.a && !keyState.d) {
-        turnLeft = false;
-        turnRight = false;
+        acceleration.turnLeft = false;
+        acceleration.turnRight = false;
     }
 });
 
@@ -389,6 +393,22 @@ function animate() {
 
 	renderer.render( scene, camera );
 }
+
+// ==========================================
+// MISC
+// ==========================================
+
+/*
+function createMenu() {
+    var gui = new GUI( );
+    gui.domElement.id = 'gui';
+
+    var f1 = gui.addFolder('reloj');
+    f1.add(acceleration, "accForward");
+    f1.open();
+
+}
+    */
 
 // ==========================================
 // INITIALIZE SCENE
