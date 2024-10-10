@@ -155,58 +155,237 @@ function loadExternalModels() {
 }
 
 // ==========================================
-// MOVEMENT FUNCTIONS
+// MOVEMENT HANDLER
 // ==========================================
+const forwardAcceleration = 0.0001;
+const backwardAcceleration = -0.00005;
+const leftAcceleration = 0.0001;
+const rightAcceleration = -leftAcceleration;
 
-var forwardAcceleration = 0.01;
-var backwardAcceleration = -0.005;
-var turningAcceleration = 0.05;
+const maxBackwardAcceleration = -0.005;
+const maxForwardAcceleration = 0.01;
+const maxLeftTurningAcceleration = 0.0002;
+const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
 
-const maxForwardSpeed = 0.3;
-const maxBackwardSpeed = -0.2;
+const airDrag = 0.05; // You can adjust this for more/less drag
 
-const maxTurningSpeed = 0.8;
+var totalForwardAcceleration = 0;
+var totalTurningAcceleration = 0;
 
 var forwardSpeed = 0;
 var turningSpeed = 0;
 
+var accForward = false;
+var accBackward = false;
+var turnRight = false;
+var turnLeft = false;
+
 function moveForward() {
+    totalForwardAcceleration += forwardAcceleration;
     globalDropshipMovement.position.x += forwardSpeed;
-    forwardSpeed = Math.ceil(forwardSpeed + forwardAcceleration, maxForwardSpeed)
+    forwardSpeed = Math.min(forwardSpeed + forwardAcceleration, maxForwardAcceleration);
 }
 
 function moveBackward() {
     globalDropshipMovement.position.x += forwardSpeed;
-    forwardSpeed = Math.floor(forwardSpeed + backwardAcceleration, maxBackwardSpeed)
+    forwardSpeed = Math.max(forwardSpeed + backwardAcceleration, maxBackwardAcceleration);
 }
 
-// Handle keyboard inputs for dropship movement
-function handleKeys(pressedKeys) {
+function handleMovement() {
+    var finalForwardAcceleration = 0.0;
+    var finalTurningAcceleration = 0.0;
 
-    if (pressedKeys[87]) { // W
-        moveForward();
-    } else if (pressedKeys[83]) { // S
-        moveBackward();
+    // Forward/backward acceleration handling
+    if (accForward) {
+        totalForwardAcceleration = Math.min(totalForwardAcceleration + forwardAcceleration, maxForwardAcceleration);
+    } else if (accBackward) {
+        totalForwardAcceleration = Math.max(totalForwardAcceleration + backwardAcceleration, maxBackwardAcceleration);
     }
 
-    if (pressedKeys[65]) { // A
-        moveForward();
-    } else if (pressedKeys[68]) { // D
-        moveBackward();
+    // Turning acceleration handling
+    if (turnLeft) {
+        totalTurningAcceleration = Math.min(totalTurningAcceleration + leftAcceleration, maxLeftTurningAcceleration);
+    } else if (turnRight) {
+        totalTurningAcceleration = Math.max(totalTurningAcceleration + rightAcceleration, maxRightTurningAcceleration);
+    }
+
+    // Apply drag force for forward movement
+    finalForwardAcceleration = totalForwardAcceleration;
+    var direction = forwardSpeed >= 0 ? 1 : -1;
+    let dragForceForward = 0.5 * airDrag * Math.pow(forwardSpeed, 2) * direction;
+    finalForwardAcceleration -= dragForceForward;
+
+    forwardSpeed += finalForwardAcceleration;
+
+    // Apply drag force for turning movement
+    finalTurningAcceleration = totalTurningAcceleration;
+    var turnDirection = turningSpeed >= 0 ? 1 : -1;
+    let dragForceTurning = 0.5 * airDrag * Math.pow(turningSpeed, 2) * turnDirection;
+    finalTurningAcceleration -= dragForceTurning;
+
+    turningSpeed += finalTurningAcceleration;
+
+    // Move the object
+    globalDropshipMovement.translateX(forwardSpeed);
+    globalDropshipMovement.rotateY(turningSpeed);
+
+    // Needed to stop moving the dropship once speed is too low
+    if (Math.abs(forwardSpeed) < 0.0001) {
+        forwardSpeed = 0;
+        totalForwardAcceleration = 0;
+    }
+
+    if (Math.abs(turningSpeed) < 0.0001) {
+        turningSpeed = 0;
+        totalTurningAcceleration = 0;
+    }
+}
+
+// Forward
+const startPitchingDownAt = 0.4;
+const stopPitchingDownAt = 0.8;
+const startPitchingPropsAt = 0.01;
+const stopPitchingPropsAt = 0.3;
+
+const maxAirframePitchDown = Math.PI / 10;
+const maxPropsPitchDown = Math.PI / 8;
+
+// Backward
+const startPitchingUpAt = -0.4; // Reverse threshold for pitching up
+const stopPitchingUpAt = -0.8;
+const startPitchingPropsUpAt = -0.01;
+const stopPitchingPropsUpAt = -0.3;
+
+const maxAirframePitchUp = Math.PI / 12;
+const maxPropsPitchUp = Math.PI / 10;
+
+function handleRotationVisuals() {
+    // Calculate speed percentage based on total acceleration
+    const maxSpeedPercentage = totalForwardAcceleration / maxForwardAcceleration;
+
+    // --- Airframe pitching when moving forward ---
+    if (maxSpeedPercentage > startPitchingDownAt && maxSpeedPercentage <= stopPitchingDownAt) {
+        const normalizedPercentage = (maxSpeedPercentage - startPitchingDownAt) / (stopPitchingDownAt - startPitchingDownAt);
+        airframe.rotation.z = -(normalizedPercentage * maxAirframePitchDown); // Pitch the airframe
+    } else if (maxSpeedPercentage > stopPitchingDownAt) {
+        airframe.rotation.z = -maxAirframePitchDown; // Max pitch reached
+    } else {
+        airframe.rotation.z = 0; // No pitch before startPitchingDownAt
+    }
+
+    // --- Props pitching when moving forward ---
+    if (maxSpeedPercentage > startPitchingPropsAt && maxSpeedPercentage <= stopPitchingPropsAt) {
+        const normalizedPercentage = (maxSpeedPercentage - startPitchingPropsAt) / (stopPitchingPropsAt - startPitchingPropsAt);
+        propellerCasings.rotation.z = -(normalizedPercentage * maxPropsPitchDown); // Pitch the props
+    } else if (maxSpeedPercentage > stopPitchingPropsAt) {
+        propellerCasings.rotation.z = -maxPropsPitchDown; // Max pitch for props
+    } else {
+        propellerCasings.rotation.z = 0; // No pitch before startPitchingPropsAt
+    }
+
+    // --- Airframe pitching when moving backward ---
+    if (totalForwardAcceleration < startPitchingUpAt && totalForwardAcceleration >= stopPitchingUpAt) {
+        const normalizedPercentage = (startPitchingUpAt - totalForwardAcceleration) / (startPitchingUpAt - stopPitchingUpAt);
+        airframe.rotation.z = (normalizedPercentage * maxAirframePitchUp); // Reverse pitch for backward movement
+    } else if (totalForwardAcceleration < stopPitchingUpAt) {
+        airframe.rotation.z = maxAirframePitchUp; // Max reverse pitch reached
+    }
+
+    // --- Props pitching when moving backward ---
+    if (totalForwardAcceleration < startPitchingPropsUpAt && totalForwardAcceleration >= stopPitchingPropsUpAt) {
+        const normalizedPercentage = (startPitchingPropsUpAt - totalForwardAcceleration) / (startPitchingPropsUpAt - stopPitchingPropsUpAt);
+        propellerCasings.rotation.z = (normalizedPercentage * maxPropsPitchUp); // Reverse pitch for props
+    } else if (totalForwardAcceleration < stopPitchingPropsUpAt) {
+        propellerCasings.rotation.z = maxPropsPitchUp; // Max reverse pitch for props
     }
 }
 
 // ==========================================
-// ANIMATION LOOP
+// INPUT HANDLERS
+// ==========================================
+
+const wKey = 87;
+const sKey = 83;
+const aKey = 65;
+const dKey = 68;
+
+const keyState = {
+    w: false,
+    s: false,
+    a: false,
+    d: false
+};
+
+document.addEventListener('keydown', (e) => {
+    switch (e.keyCode) {
+        case wKey:
+            keyState.w = true;
+            accForward = true;
+            accBackward = false;
+            break;
+        case sKey:
+            keyState.s = true;
+            accBackward = true;
+            accForward = false;
+            break;
+        case aKey:
+            keyState.a = true;
+            turnLeft = true;
+            turnRight = false;
+            break;
+        case dKey:
+            keyState.d = true;
+            turnRight = true;
+            turnLeft = false;
+            break;
+        default:
+            break;
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    switch (e.keyCode) {
+        case wKey:
+            keyState.w = false;
+            accForward = false;
+            break;
+        case sKey:
+            keyState.s = false;
+            accBackward = false;
+            break;
+        case aKey:
+            keyState.a = false;
+            turnLeft = false;
+            break;
+        case dKey:
+            keyState.d = false;
+            turnRight = false;
+            break;
+        default:
+            break;
+    }
+
+    // Stop movement/turning when no keys are pressed
+    if (!keyState.w && !keyState.s) {
+        accForward = false;
+        accBackward = false;
+    }
+
+    if (!keyState.a && !keyState.d) {
+        turnLeft = false;
+        turnRight = false;
+    }
+});
+
+
+// ==========================================
+// SIMULATION LOOP
 // ==========================================
 
 function animate() {
 
-    var pressedKeys = {};
-    window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
-    window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
-
-    handleKeys(pressedKeys);
+    handleMovement();
+    handleRotationVisuals();
 
 	renderer.render( scene, camera );
 }
