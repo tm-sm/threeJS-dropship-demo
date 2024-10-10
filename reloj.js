@@ -1,23 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    
-    <meta charset="UTF-8">
-    <title>Demo Luces</title>
-    <link rel="stylesheet" type="text/css" href="css/global.css"></link>
 
-</head>
-
-<body>
-    <div id="container3D"></div>
-
-    <script src="js/jquery.min.js"></script>    
-    <script src="js/three.js"></script>    
-    <script src="js/dat.gui.js"></script> 
-    <script src="js/controls/OrbitControls.js"></script>  
-    <script src="js/loaders/GLTFLoader.js"></script>          
-
-    <script type="text/javascript">
   
         var $window=$(window);    
         var $container = $('#container3D');
@@ -279,8 +260,4 @@
         createMenu();
         render();
     
-    </script>
-
-
-</body>
-</html>
+    
