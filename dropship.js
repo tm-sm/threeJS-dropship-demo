@@ -192,25 +192,34 @@ function loadExternalModels() {
 // ==========================================
 const forwardAcceleration = 1.5;
 const backwardAcceleration = -1.3;
-const leftAcceleration = 1;
+const leftAcceleration = -0.1;
 const rightAcceleration = -leftAcceleration;
+const leftTurnAcceleration = 1;
+const rightTurnAcceleration = -leftTurnAcceleration;
 
 const maxBackwardAcceleration = -300;
 const maxForwardAcceleration = 400;
+const maxLeftAcceleration = -30;
+const maxRightAcceleration = -maxLeftAcceleration;
 const maxLeftTurningAcceleration = 20;
 const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
 
 const airDrag = 0.01; // Controls how fast the ship comes to a stop
 
 var totalForwardAcceleration = 0;
+var totalHorizontalAcceleration = 0;
+var totalVerticalAcceleration = 0;
 var totalTurningAcceleration = 0;
 
 var forwardSpeed = 0;
+var horizontalSpeed = 0;
 var turningSpeed = 0;
 
 var accelerating = {
     forward: false,
     backward: false,
+    right: false,
+    left: false,
     turnRight: false,
     turnLeft: false
 };
@@ -231,12 +240,21 @@ function handleMovement() {
     // Dynamic max speed calculation
     forwardSpeed = totalForwardAcceleration - (airDrag * forwardSpeed);
 
+    if (accelerating.left) {
+        totalHorizontalAcceleration = Math.min(totalHorizontalAcceleration + leftAcceleration, maxLeftAcceleration);
+    } else if (accelerating.right) {
+        totalHorizontalAcceleration = Math.max(totalHorizontalAcceleration + rightAcceleration, maxRightAcceleration);
+    } else {
+        totalHorizontalAcceleration -= (airDrag * horizontalSpeed) * 0.1;
+    }
+
+    horizontalSpeed = totalHorizontalAcceleration - (airDrag * horizontalSpeed);
 
     // -- Rotation along the ship's Y axis --
     if (accelerating.turnLeft) {
-        totalTurningAcceleration = Math.min(totalTurningAcceleration + leftAcceleration, maxLeftTurningAcceleration);
+        totalTurningAcceleration = Math.min(totalTurningAcceleration + leftTurnAcceleration, maxLeftTurningAcceleration);
     } else if (accelerating.turnRight) {
-        totalTurningAcceleration = Math.max(totalTurningAcceleration + rightAcceleration, maxRightTurningAcceleration);
+        totalTurningAcceleration = Math.max(totalTurningAcceleration + rightTurnAcceleration, maxRightTurningAcceleration);
     } else {
         totalTurningAcceleration -= (airDrag * turningSpeed) * 2;
     }
@@ -246,6 +264,7 @@ function handleMovement() {
 
     // Apply local movement
     globalDropshipMovement.translateX(forwardSpeed / 1000);
+    globalDropshipMovement.translateZ(horizontalSpeed / 1000);
     globalDropshipMovement.rotateY(turningSpeed / 1000);
 
 
@@ -263,6 +282,7 @@ function handleMovement() {
 const step = 0.02; // Controls how 'violently' the dropship reacts to input
 
 var cumulativeForwardIndicator = 0.0;
+var cumulativeHorizontalIndicator = 0.0;
 var cumulativeTurningIndicator = 0.0;
 
 const maxAirframePitchDown = Math.PI / 10;
@@ -305,6 +325,16 @@ function handleRotationVisuals() {
     }
 
     airframe.rotation.x = - (cumulativeTurningIndicator * maxAirframeTilt);
+
+    if (accelerating.left) {
+        cumulativeHorizontalIndicator = Math.max(cumulativeHorizontalIndicator - step * 1.5, -1);
+    } else if (accelerating.right) {
+        cumulativeHorizontalIndicator = Math.min(cumulativeHorizontalIndicator + step * 1.5, 1);
+    } else if (cumulativeHorizontalIndicator != 0) {
+        cumulativeHorizontalIndicator -= (cumulativeHorizontalIndicator >= 0) ? step / 2 : -step / 2;
+    }
+
+    airframe.rotation.x += cumulativeHorizontalIndicator * maxAirframeTilt;
 }
 
 // ==========================================
@@ -324,6 +354,8 @@ const wKey = 87;
 const sKey = 83;
 const aKey = 65;
 const dKey = 68;
+const zKey = 90;
+const xKey = 88;
 const numOne = 97;
 const numTwo = 98;
 const numThree = 99;
@@ -333,7 +365,9 @@ const keyState = {
     w: false,
     s: false,
     a: false,
-    d: false
+    d: false,
+    z: false,
+    x: false,
 };
 
 document.addEventListener('keydown', (e) => {
@@ -350,11 +384,21 @@ document.addEventListener('keydown', (e) => {
             break;
         case aKey:
             keyState.a = true;
-            accelerating.turnLeft = true;
-            accelerating.turnRight = false;
+            accelerating.left = true;
+            accelerating.right = false;
             break;
         case dKey:
             keyState.d = true;
+            accelerating.right = true;
+            accelerating.left = false;
+            break;
+        case zKey:
+            keyState.z = true;
+            accelerating.turnLeft = true;
+            accelerating.turnRight = false;
+            break;
+        case xKey:
+            keyState.x = true;
             accelerating.turnRight = true;
             accelerating.turnLeft = false;
             break;
@@ -386,10 +430,18 @@ document.addEventListener('keyup', (e) => {
             break;
         case aKey:
             keyState.a = false;
-            accelerating.turnLeft = false;
+            accelerating.left = false;
             break;
         case dKey:
             keyState.d = false;
+            accelerating.right = false;
+            break;
+         case zKey:
+            keyState.z = false;
+            accelerating.turnLeft = false;
+            break;
+        case xKey:
+            keyState.x = false;
             accelerating.turnRight = false;
             break;
         default:
@@ -443,8 +495,10 @@ function createMenu() {
     var f1 = gui.addFolder('controls');
     f1.add(accelerating, 'forward').name('forward').listen();
     f1.add(accelerating, 'backward').name('backward').listen();
-    f1.add(accelerating, 'turnLeft').name('left').listen();
-    f1.add(accelerating, 'turnRight').name('right').listen();
+    f1.add(accelerating, 'left').name('left').listen();
+    f1.add(accelerating, 'right').name('right').listen();
+    f1.add(accelerating, 'turnLeft').name('turnLeft').listen();
+    f1.add(accelerating, 'turnRight').name('turnRight').listen();
 
     var f2 = gui.addFolder('data');
     f2.add(movement, 'dragF', -4, 4).step(0.1).name('dragF').listen();
