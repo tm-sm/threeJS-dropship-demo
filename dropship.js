@@ -84,6 +84,8 @@ function setupTerrain() {
 // Add helpers (like axes) to the scene
 function addHelpers() {
     const axesHelper = new THREE.AxesHelper( 5 );
+    const box = new THREE.BoxHelper( propellerCasingLeft.getObjectByName('propLMesh'), 0xffff00 );
+    scene.add(box);
     scene.add( axesHelper );
 }
 
@@ -98,6 +100,7 @@ function loadExternalModels() {
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
+        gltf.scene.name = 'aiframeMesh';
         airframe.add(gltf.scene);
     }, undefined, function ( error ) {
         console.error( error );
@@ -109,6 +112,7 @@ function loadExternalModels() {
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
+        gltf.scene.name = 'cockpitMesh';
         cockpit.add(gltf.scene);
     }, undefined, function ( error ) {
         console.error( error );
@@ -120,6 +124,7 @@ function loadExternalModels() {
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
+        gltf.scene.name = 'wingsMesh';
         wings.add(gltf.scene);
     }, undefined, function ( error ) {
         console.error( error );
@@ -131,6 +136,7 @@ function loadExternalModels() {
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
+        gltf.scene.name = 'rampMesh';
         ramp.add(gltf.scene);
     }, undefined, function ( error ) {
         console.error( error );
@@ -142,24 +148,32 @@ function loadExternalModels() {
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
-        propellerCasingLeft.add(gltf.scene);
+        gltf.scene.name = 'propLMesh';
+        gltf.scene.position.x = 1.48602;
+        gltf.scene.position.y = 0.602539;
+        propellerCasingLeft.add(model);
     }, undefined, function ( error ) {
         console.error( error );
     });
 
     loader.load( 'public/models/dropship/propeller_r.glb', function ( gltf ) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0xffff00});
+        var modelMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
-        propellerCasingRight.add(gltf.scene);
+        gltf.scene.name = 'propRMesh';
+        gltf.scene.position.x = 1.48602;
+        gltf.scene.position.y = 0.602539;
+        propellerCasingRight.add(model);
     }, undefined, function ( error ) {
         console.error( error );
     });
 
     propellerCasings.add(propellerCasingLeft);
     propellerCasings.add(propellerCasingRight);
+    propellerCasings.position.x = -1.48602;
+    propellerCasings.position.y = -0.602539;
 
     airframe.add(wings);
     airframe.add(ramp);
@@ -246,7 +260,7 @@ function handleMovement() {
 }
 
 
-const step = 0.01; // Controls how 'violently' the dropship reacts to input
+const step = 0.02; // Controls how 'violently' the dropship reacts to input
 
 var cumulativeForwardIndicator = 0.0;
 var cumulativeTurningIndicator = 0.0;
@@ -267,7 +281,7 @@ function handleRotationVisuals() {
     } else if (accelerating.backward) {
         cumulativeForwardIndicator = Math.max(cumulativeForwardIndicator - step, -1);
     } else if (cumulativeForwardIndicator != 0) {
-        cumulativeForwardIndicator -= (cumulativeForwardIndicator >= 0) ? step : -step;
+        cumulativeForwardIndicator -= (cumulativeForwardIndicator >= 0) ? step / 4 : -step / 4;
     }
 
     // Negative due to anti-clockwise positive rotation in WebGL
@@ -279,12 +293,12 @@ function handleRotationVisuals() {
     } else if (accelerating.turnRight) {
         cumulativeTurningIndicator = Math.max(cumulativeTurningIndicator - step, -1);
     } else if (cumulativeTurningIndicator != 0) {
-        cumulativeTurningIndicator -= (cumulativeTurningIndicator >= 0) ? step : -step;
+        cumulativeTurningIndicator -= (cumulativeTurningIndicator >= 0) ? step / 4 : -step / 4;
     }
 
     if (cumulativeTurningIndicator >= 0) {
-        propellerCasingLeft.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
-        propellerCasingRight.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
+        propellerCasingLeft.rotation.z = -maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        propellerCasingRight.rotation.z = maxIndividualPropTiltForward * cumulativeTurningIndicator;
     } else {
         propellerCasingRight.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
         propellerCasingLeft.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
@@ -433,12 +447,12 @@ function createMenu() {
     f1.add(accelerating, 'turnRight').name('right').listen();
 
     var f2 = gui.addFolder('data');
-    f2.add(movement, 'dragF', -0.1, 0.1).step(0.01).name('dragF').listen();
-    f2.add(movement, 'dragT', -0.1, 0.1).step(0.01).name('dragT').listen();
-    f2.add(movement, 'accF', -0.1, 0.1).step(0.01).name('accF').listen();
-    f2.add(movement, 'accT', -0.1, 0.1).step(0.01).name('accT').listen();
-    f2.add(movement, 'speed', -0.1, 0.1).step(0.01).name('speed').listen();
-    f2.add(movement, 'turn', -0.1, 0.1).step(0.01).name('turn').listen();
+    f2.add(movement, 'dragF', -4, 4).step(0.1).name('dragF').listen();
+    f2.add(movement, 'dragT', -0.5, 0.5).step(0.1).name('dragT').listen();
+    f2.add(movement, 'accF', -400, 400).step(0.1).name('accF').listen();
+    f2.add(movement, 'accT', -20, 20).step(0.1).name('accT').listen();
+    f2.add(movement, 'speed', -400, 400).step(0.1).name('speed').listen();
+    f2.add(movement, 'turn', -20, 20).step(0.1).name('turn').listen();
 }
 
 
