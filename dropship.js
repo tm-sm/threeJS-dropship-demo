@@ -196,6 +196,8 @@ const leftAcceleration = -0.1;
 const rightAcceleration = -leftAcceleration;
 const leftTurnAcceleration = 1;
 const rightTurnAcceleration = -leftTurnAcceleration;
+const upAcceleration = 0.8;
+const downAcceleration = -0.6;
 
 const maxBackwardAcceleration = -300;
 const maxForwardAcceleration = 400;
@@ -203,6 +205,8 @@ const maxLeftAcceleration = -30;
 const maxRightAcceleration = -maxLeftAcceleration;
 const maxLeftTurningAcceleration = 20;
 const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
+const maxUpAcceleration = 50;
+const maxDownAcceleration = -50;
 
 const airDrag = 0.01; // Controls how fast the ship comes to a stop
 
@@ -214,6 +218,7 @@ var totalTurningAcceleration = 0;
 var forwardSpeed = 0;
 var horizontalSpeed = 0;
 var turningSpeed = 0;
+var verticalSpeed = 0;
 
 var accelerating = {
     forward: false,
@@ -221,7 +226,9 @@ var accelerating = {
     right: false,
     left: false,
     turnRight: false,
-    turnLeft: false
+    turnLeft: false,
+    up: false,
+    down: false,
 };
 
 function handleMovement() {
@@ -262,10 +269,22 @@ function handleMovement() {
     // Dynamic max turning speed calculation
     turningSpeed = totalTurningAcceleration - (airDrag * turningSpeed);
 
+
+    if (accelerating.up) {
+        totalVerticalAcceleration = Math.min(totalVerticalAcceleration + upAcceleration, maxUpAcceleration);
+    } else if (accelerating.down) {
+        totalVerticalAcceleration = Math.max(totalVerticalAcceleration + downAcceleration, maxDownAcceleration);
+    } else {
+        totalVerticalAcceleration -= (airDrag * verticalSpeed);
+    }
+
+    verticalSpeed = totalVerticalAcceleration - (airDrag * verticalSpeed);
+
     // Apply local movement
     globalDropshipMovement.translateX(forwardSpeed / 1000);
     globalDropshipMovement.translateZ(horizontalSpeed / 1000);
     globalDropshipMovement.rotateY(turningSpeed / 1000);
+    globalDropshipMovement.translateY(verticalSpeed / 1000);
 
 
 
@@ -356,6 +375,8 @@ const aKey = 65;
 const dKey = 68;
 const zKey = 90;
 const xKey = 88;
+const qKey = 81;
+const eKey = 69;
 const numOne = 97;
 const numTwo = 98;
 const numThree = 99;
@@ -368,6 +389,8 @@ const keyState = {
     d: false,
     z: false,
     x: false,
+    q: false,
+    e: false,
 };
 
 document.addEventListener('keydown', (e) => {
@@ -401,6 +424,16 @@ document.addEventListener('keydown', (e) => {
             keyState.x = true;
             accelerating.turnRight = true;
             accelerating.turnLeft = false;
+            break;
+        case qKey:
+            keyState.q = true;
+            accelerating.up = true;
+            accelerating.down = false;
+            break;
+        case eKey:
+            keyState.e = true;
+            accelerating.down = true;
+            accelerating.up = false;
             break;
         case numOne:
             break;
@@ -443,6 +476,14 @@ document.addEventListener('keyup', (e) => {
         case xKey:
             keyState.x = false;
             accelerating.turnRight = false;
+            break;
+        case qKey:
+            keyState.q = false;
+            accelerating.up = false;
+            break;
+        case eKey:
+            keyState.e = false;
+            accelerating.down = false;
             break;
         default:
             break;
@@ -499,6 +540,8 @@ function createMenu() {
     f1.add(accelerating, 'right').name('right').listen();
     f1.add(accelerating, 'turnLeft').name('turnLeft').listen();
     f1.add(accelerating, 'turnRight').name('turnRight').listen();
+    f1.add(accelerating, 'up').name('up').listen();
+    f1.add(accelerating, 'down').name('down').listen();
 
     var f2 = gui.addFolder('data');
     f2.add(movement, 'dragF', -4, 4).step(0.1).name('dragF').listen();
