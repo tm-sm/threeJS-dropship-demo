@@ -158,17 +158,17 @@ function loadExternalModels() {
 // ==========================================
 // MOVEMENT HANDLER
 // ==========================================
-const forwardAcceleration = 0.0001;
-const backwardAcceleration = -0.00005;
-const leftAcceleration = 0.0001;
+const forwardAcceleration = 1.5;
+const backwardAcceleration = -1;
+const leftAcceleration = 1;
 const rightAcceleration = -leftAcceleration;
 
-const maxBackwardAcceleration = -0.005;
-const maxForwardAcceleration = 0.01;
-const maxLeftTurningAcceleration = 0.0002;
+const maxBackwardAcceleration = -100;
+const maxForwardAcceleration = 200;
+const maxLeftTurningAcceleration = 20;
 const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
 
-const airDrag = 0.05; // You can adjust this for more/less drag
+const airDrag = 0.01; // You can adjust this for more/less drag
 
 var totalForwardAcceleration = 0;
 var totalTurningAcceleration = 0;
@@ -176,75 +176,47 @@ var totalTurningAcceleration = 0;
 var forwardSpeed = 0;
 var turningSpeed = 0;
 
-var acceleration = {
-    accForward: false,
-    accBackward: false,
+var accelerating = {
+    forward: false,
+    backward: false,
     turnRight: false,
     turnLeft: false
 };
 
-
-function moveForward() {
-    totalForwardAcceleration += forwardAcceleration;
-    globalDropshipMovement.position.x += forwardSpeed;
-    forwardSpeed = Math.min(forwardSpeed + forwardAcceleration, maxForwardAcceleration);
-}
-
-function moveBackward() {
-    globalDropshipMovement.position.x += forwardSpeed;
-    forwardSpeed = Math.max(forwardSpeed + backwardAcceleration, maxBackwardAcceleration);
-}
-
 function handleMovement() {
-    var finalForwardAcceleration = 0.0;
-    var finalTurningAcceleration = 0.0;
 
-    // Forward/backward acceleration handling
-    if (acceleration.accForward) {
+    if (accelerating.forward) {
         totalForwardAcceleration = Math.min(totalForwardAcceleration + forwardAcceleration, maxForwardAcceleration);
-    } else if (acceleration.accBackward) {
+    } else if (accelerating.backward) {
         totalForwardAcceleration = Math.max(totalForwardAcceleration + backwardAcceleration, maxBackwardAcceleration);
+    } else {
+        totalForwardAcceleration -= (airDrag * forwardSpeed);
     }
 
-    // Turning acceleration handling
-    if (acceleration.turnLeft) {
+    forwardSpeed = totalForwardAcceleration - (airDrag * forwardSpeed);
+
+    if (accelerating.turnLeft) {
         totalTurningAcceleration = Math.min(totalTurningAcceleration + leftAcceleration, maxLeftTurningAcceleration);
-    } else if (acceleration.turnRight) {
+    } else if (accelerating.turnRight) {
         totalTurningAcceleration = Math.max(totalTurningAcceleration + rightAcceleration, maxRightTurningAcceleration);
+    } else {
+        totalTurningAcceleration -= (airDrag * turningSpeed) * 2;
     }
 
-    // Apply drag force for forward movement
-    finalForwardAcceleration = totalForwardAcceleration;
-    var direction = forwardSpeed >= 0 ? 1 : -1;
-    let dragForceForward = 0.5 * airDrag * Math.pow(forwardSpeed, 2) * direction;
-    finalForwardAcceleration -= dragForceForward;
-
-    forwardSpeed += finalForwardAcceleration;
-
-    // Apply drag force for turning movement
-    finalTurningAcceleration = totalTurningAcceleration;
-    var turnDirection = turningSpeed >= 0 ? 1 : -1;
-    let dragForceTurning = 0.5 * airDrag * Math.pow(turningSpeed, 2) * turnDirection;
-    finalTurningAcceleration -= dragForceTurning;
-
-    turningSpeed += finalTurningAcceleration;
+    turningSpeed = totalTurningAcceleration - (airDrag * turningSpeed);
 
     // Move the object
-    globalDropshipMovement.translateX(forwardSpeed);
-    globalDropshipMovement.rotateY(turningSpeed);
+    globalDropshipMovement.translateX(forwardSpeed / 1000);
+    globalDropshipMovement.rotateY(turningSpeed / 1000);
 
-    // Needed to stop moving the dropship once speed is too low
-    if (Math.abs(forwardSpeed) < 0.0001) {
-        forwardSpeed = 0;
-        totalForwardAcceleration = 0;
-    }
-
-    if (Math.abs(turningSpeed) < 0.0001) {
-        turningSpeed = 0;
-        totalTurningAcceleration = 0;
-    }
+    // Update movement object for debugging purposes
+    movement.accF = totalForwardAcceleration;
+    movement.accT = totalTurningAcceleration;
+    movement.dragF = airDrag * forwardSpeed;
+    movement.dragT = airDrag * turningSpeed;
+    movement.speed = forwardSpeed;
+    movement.turn = turningSpeed;
 }
-
 // Forward
 const startPitchingDownAt = 0.4;
 const stopPitchingDownAt = 0.8;
@@ -324,23 +296,23 @@ document.addEventListener('keydown', (e) => {
     switch (e.keyCode) {
         case wKey:
             keyState.w = true;
-            acceleration.accForward = true;
-            acceleration.accBackward = false;
+            accelerating.forward = true;
+            accelerating.backward = false;
             break;
         case sKey:
             keyState.s = true;
-            acceleration.accBackward = true;
-            acceleration.accForward = false;
+            accelerating.backward = true;
+            accelerating.forward = false;
             break;
         case aKey:
             keyState.a = true;
-            acceleration.turnLeft = true;
-            acceleration.turnRight = false;
+            accelerating.turnLeft = true;
+            accelerating.turnRight = false;
             break;
         case dKey:
             keyState.d = true;
-            acceleration.turnRight = true;
-            acceleration.turnLeft = false;
+            accelerating.turnRight = true;
+            accelerating.turnLeft = false;
             break;
         default:
             break;
@@ -351,19 +323,19 @@ document.addEventListener('keyup', (e) => {
     switch (e.keyCode) {
         case wKey:
             keyState.w = false;
-            acceleration.accForward = false;
+            accelerating.forward = false;
             break;
         case sKey:
             keyState.s = false;
-            acceleration.accBackward = false;
+            accelerating.backward = false;
             break;
         case aKey:
             keyState.a = false;
-            acceleration.turnLeft = false;
+            accelerating.turnLeft = false;
             break;
         case dKey:
             keyState.d = false;
-            acceleration.turnRight = false;
+            accelerating.turnRight = false;
             break;
         default:
             break;
@@ -371,13 +343,13 @@ document.addEventListener('keyup', (e) => {
 
     // Stop movement/turning when no keys are pressed
     if (!keyState.w && !keyState.s) {
-        acceleration.accForward = false;
-        acceleration.accBackward = false;
+        accelerating.forward = false;
+        accelerating.backward = false;
     }
 
     if (!keyState.a && !keyState.d) {
-        acceleration.turnLeft = false;
-        acceleration.turnRight = false;
+        accelerating.turnLeft = false;
+        accelerating.turnRight = false;
     }
 });
 
@@ -395,20 +367,42 @@ function animate() {
 }
 
 // ==========================================
-// MISC
-// ==========================================
+// MONITORING
+// =========================================
 
-/*
+const movement = {
+    dragF: 0.0,
+    dragT: 0.0,
+    accF: 0.0,
+    accT: 0.0,
+    speed: 0.0,
+    turn: 0.0,
+}
+
+
 function createMenu() {
-    var gui = new GUI( );
+    var gui = new dat.GUI( );
     gui.domElement.id = 'gui';
 
-    var f1 = gui.addFolder('reloj');
-    f1.add(acceleration, "accForward");
+    var f1 = gui.addFolder('controls');
+    f1.add(accelerating, 'forward').name('forward').listen();
+    f1.add(accelerating, 'backward').name('backward').listen();
+    f1.add(accelerating, 'turnLeft').name('left').listen();
+    f1.add(accelerating, 'turnRight').name('right').listen();
     f1.open();
 
+    var f2 = gui.addFolder('data');
+    f2.add(movement, 'dragF', -0.1, 0.1).step(0.01).name('dragF').listen();
+    f2.add(movement, 'dragT', -0.1, 0.1).step(0.01).name('dragT').listen();
+    f2.add(movement, 'accF', -0.1, 0.1).step(0.01).name('accF').listen();
+    f2.add(movement, 'accT', -0.1, 0.1).step(0.01).name('accT').listen();
+    f2.add(movement, 'speed', -0.1, 0.1).step(0.01).name('speed').listen();
+    f2.add(movement, 'turn', -0.1, 0.1).step(0.01).name('turn').listen();
+    f2.open();
+
+
 }
-    */
+
 
 // ==========================================
 // INITIALIZE SCENE
@@ -418,3 +412,4 @@ setLights();
 setupTerrain();
 addHelpers();
 loadExternalModels();
+createMenu();
