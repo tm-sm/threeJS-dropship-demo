@@ -11,19 +11,36 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // GLOBAL CONSTANTS AND VARIABLES
 // ==========================================
 
-const PI = 3.1415927;
-
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const renderer = new THREE.WebGLRenderer();
-
-const controls = new OrbitControls( camera, renderer.domElement );
 const loader = new GLTFLoader();
 
-camera.position.z = 5;
+var currentCamera;
+
+const chaseCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const topViewCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const sideViewCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+currentCamera = chaseCamera;
+
+chaseCamera.position.x = -15;
+chaseCamera.position.y = 6;
+
+topViewCamera.position.y = 30;
+topViewCamera.position.x = -1;
+
+sideViewCamera.position.z = 20;
 
 const globalDropshipMovement = new THREE.Group();
 const pitchDropshipMovement = new THREE.Group();
+
+globalDropshipMovement.add(chaseCamera);
+globalDropshipMovement.add(topViewCamera);
+pitchDropshipMovement.add(sideViewCamera);
+
+chaseCamera.lookAt(globalDropshipMovement.position);
+topViewCamera.lookAt(globalDropshipMovement.position);
+sideViewCamera.lookAt(pitchDropshipMovement.position);
 
 const airframe = new THREE.Group();
 const wings = new THREE.Group();
@@ -33,6 +50,7 @@ const ramp = new THREE.Group();
 const propellerCasingLeft = new THREE.Group();
 const propellerCasingRight = new THREE.Group();
 const propellerCasings = new THREE.Group();
+
 
 // ==========================================
 // RENDERER SETUP
@@ -59,7 +77,7 @@ function setupTerrain() {
     const terrainGeometry = new THREE.PlaneGeometry(500, 500);
     const material = new THREE.MeshBasicMaterial( { color: 0x333333 } );
     const terrain = new THREE.Mesh(terrainGeometry, material);
-    terrain.rotation.x -= PI / 2.0;
+    terrain.rotation.x -= Math.PI / 2.0;
     scene.add(terrain);
 }
 
@@ -159,16 +177,16 @@ function loadExternalModels() {
 // MOVEMENT HANDLER
 // ==========================================
 const forwardAcceleration = 1.5;
-const backwardAcceleration = -1;
+const backwardAcceleration = -1.3;
 const leftAcceleration = 1;
 const rightAcceleration = -leftAcceleration;
 
-const maxBackwardAcceleration = -100;
-const maxForwardAcceleration = 200;
+const maxBackwardAcceleration = -300;
+const maxForwardAcceleration = 400;
 const maxLeftTurningAcceleration = 20;
 const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
 
-const airDrag = 0.01; // You can adjust this for more/less drag
+const airDrag = 0.01; // Controls how fast the ship comes to a stop
 
 var totalForwardAcceleration = 0;
 var totalTurningAcceleration = 0;
@@ -185,16 +203,22 @@ var accelerating = {
 
 function handleMovement() {
 
+    // -- Movement along the ship's X axis --
     if (accelerating.forward) {
         totalForwardAcceleration = Math.min(totalForwardAcceleration + forwardAcceleration, maxForwardAcceleration);
     } else if (accelerating.backward) {
         totalForwardAcceleration = Math.max(totalForwardAcceleration + backwardAcceleration, maxBackwardAcceleration);
     } else {
+        // No input detected, the ship should start to slow down
         totalForwardAcceleration -= (airDrag * forwardSpeed);
     }
 
+
+    // Dynamic max speed calculation
     forwardSpeed = totalForwardAcceleration - (airDrag * forwardSpeed);
 
+
+    // -- Rotation along the ship's Y axis --
     if (accelerating.turnLeft) {
         totalTurningAcceleration = Math.min(totalTurningAcceleration + leftAcceleration, maxLeftTurningAcceleration);
     } else if (accelerating.turnRight) {
@@ -203,13 +227,16 @@ function handleMovement() {
         totalTurningAcceleration -= (airDrag * turningSpeed) * 2;
     }
 
+    // Dynamic max turning speed calculation
     turningSpeed = totalTurningAcceleration - (airDrag * turningSpeed);
 
-    // Move the object
+    // Apply local movement
     globalDropshipMovement.translateX(forwardSpeed / 1000);
     globalDropshipMovement.rotateY(turningSpeed / 1000);
 
-    // Update movement object for debugging purposes
+
+
+    // Update movement values for debugging purposes
     movement.accF = totalForwardAcceleration;
     movement.accT = totalTurningAcceleration;
     movement.dragF = airDrag * forwardSpeed;
@@ -217,64 +244,63 @@ function handleMovement() {
     movement.speed = forwardSpeed;
     movement.turn = turningSpeed;
 }
-// Forward
-const startPitchingDownAt = 0.4;
-const stopPitchingDownAt = 0.8;
-const startPitchingPropsAt = 0.01;
-const stopPitchingPropsAt = 0.3;
+
+
+const step = 0.01; // Controls how 'violently' the dropship reacts to input
+
+var cumulativeForwardIndicator = 0.0;
+var cumulativeTurningIndicator = 0.0;
 
 const maxAirframePitchDown = Math.PI / 10;
 const maxPropsPitchDown = Math.PI / 8;
 
-// Backward
-const startPitchingUpAt = -0.4; // Reverse threshold for pitching up
-const stopPitchingUpAt = -0.8;
-const startPitchingPropsUpAt = -0.01;
-const stopPitchingPropsUpAt = -0.3;
-
 const maxAirframePitchUp = Math.PI / 12;
 const maxPropsPitchUp = Math.PI / 10;
 
+const maxIndividualPropTiltForward = Math.PI / 10;
+const maxIndividualPropTiltBackward = Math.PI / 24;
+const maxAirframeTilt = Math.PI / 20;
+
 function handleRotationVisuals() {
-    // Calculate speed percentage based on total acceleration
-    const maxSpeedPercentage = totalForwardAcceleration / maxForwardAcceleration;
+    if (accelerating.forward) {
+        cumulativeForwardIndicator = Math.min(cumulativeForwardIndicator + step, 1);
+    } else if (accelerating.backward) {
+        cumulativeForwardIndicator = Math.max(cumulativeForwardIndicator - step, -1);
+    } else if (cumulativeForwardIndicator != 0) {
+        cumulativeForwardIndicator -= (cumulativeForwardIndicator >= 0) ? step : -step;
+    }
 
-    // --- Airframe pitching when moving forward ---
-    if (maxSpeedPercentage > startPitchingDownAt && maxSpeedPercentage <= stopPitchingDownAt) {
-        const normalizedPercentage = (maxSpeedPercentage - startPitchingDownAt) / (stopPitchingDownAt - startPitchingDownAt);
-        airframe.rotation.z = -(normalizedPercentage * maxAirframePitchDown); // Pitch the airframe
-    } else if (maxSpeedPercentage > stopPitchingDownAt) {
-        airframe.rotation.z = -maxAirframePitchDown; // Max pitch reached
+    // Negative due to anti-clockwise positive rotation in WebGL
+    propellerCasings.rotation.z = (cumulativeForwardIndicator >= 0) ? -(maxPropsPitchDown * cumulativeForwardIndicator) : -(maxPropsPitchUp * cumulativeForwardIndicator);
+    pitchDropshipMovement.rotation.z = (cumulativeForwardIndicator >= 0) ? -(maxAirframePitchDown * cumulativeForwardIndicator) : -(maxAirframePitchUp * cumulativeForwardIndicator);
+
+    if (accelerating.turnLeft) {
+        cumulativeTurningIndicator = Math.min(cumulativeTurningIndicator + step, 1);
+    } else if (accelerating.turnRight) {
+        cumulativeTurningIndicator = Math.max(cumulativeTurningIndicator - step, -1);
+    } else if (cumulativeTurningIndicator != 0) {
+        cumulativeTurningIndicator -= (cumulativeTurningIndicator >= 0) ? step : -step;
+    }
+
+    if (cumulativeTurningIndicator >= 0) {
+        propellerCasingLeft.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        propellerCasingRight.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
     } else {
-        airframe.rotation.z = 0; // No pitch before startPitchingDownAt
+        propellerCasingRight.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        propellerCasingLeft.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
     }
 
-    // --- Props pitching when moving forward ---
-    if (maxSpeedPercentage > startPitchingPropsAt && maxSpeedPercentage <= stopPitchingPropsAt) {
-        const normalizedPercentage = (maxSpeedPercentage - startPitchingPropsAt) / (stopPitchingPropsAt - startPitchingPropsAt);
-        propellerCasings.rotation.z = -(normalizedPercentage * maxPropsPitchDown); // Pitch the props
-    } else if (maxSpeedPercentage > stopPitchingPropsAt) {
-        propellerCasings.rotation.z = -maxPropsPitchDown; // Max pitch for props
-    } else {
-        propellerCasings.rotation.z = 0; // No pitch before startPitchingPropsAt
-    }
-
-    // --- Airframe pitching when moving backward ---
-    if (totalForwardAcceleration < startPitchingUpAt && totalForwardAcceleration >= stopPitchingUpAt) {
-        const normalizedPercentage = (startPitchingUpAt - totalForwardAcceleration) / (startPitchingUpAt - stopPitchingUpAt);
-        airframe.rotation.z = (normalizedPercentage * maxAirframePitchUp); // Reverse pitch for backward movement
-    } else if (totalForwardAcceleration < stopPitchingUpAt) {
-        airframe.rotation.z = maxAirframePitchUp; // Max reverse pitch reached
-    }
-
-    // --- Props pitching when moving backward ---
-    if (totalForwardAcceleration < startPitchingPropsUpAt && totalForwardAcceleration >= stopPitchingPropsUpAt) {
-        const normalizedPercentage = (startPitchingPropsUpAt - totalForwardAcceleration) / (startPitchingPropsUpAt - stopPitchingPropsUpAt);
-        propellerCasings.rotation.z = (normalizedPercentage * maxPropsPitchUp); // Reverse pitch for props
-    } else if (totalForwardAcceleration < stopPitchingPropsUpAt) {
-        propellerCasings.rotation.z = maxPropsPitchUp; // Max reverse pitch for props
-    }
+    airframe.rotation.x = - (cumulativeTurningIndicator * maxAirframeTilt);
 }
+
+// ==========================================
+// CAMERA HANDLERS
+// ==========================================
+
+function updateCameras() {
+
+}
+
 
 // ==========================================
 // INPUT HANDLERS
@@ -284,6 +310,10 @@ const wKey = 87;
 const sKey = 83;
 const aKey = 65;
 const dKey = 68;
+const numOne = 97;
+const numTwo = 98;
+const numThree = 99;
+const numFour = 100;
 
 const keyState = {
     w: false,
@@ -313,6 +343,17 @@ document.addEventListener('keydown', (e) => {
             keyState.d = true;
             accelerating.turnRight = true;
             accelerating.turnLeft = false;
+            break;
+        case numOne:
+            break;
+        case numTwo:
+            currentCamera = chaseCamera;
+            break;
+        case numThree:
+            currentCamera = topViewCamera;
+            break;
+        case numFour:
+            currentCamera = sideViewCamera;
             break;
         default:
             break;
@@ -362,8 +403,9 @@ function animate() {
 
     handleMovement();
     handleRotationVisuals();
+    updateCameras();
 
-	renderer.render( scene, camera );
+	renderer.render( scene, currentCamera );
 }
 
 // ==========================================
@@ -389,7 +431,6 @@ function createMenu() {
     f1.add(accelerating, 'backward').name('backward').listen();
     f1.add(accelerating, 'turnLeft').name('left').listen();
     f1.add(accelerating, 'turnRight').name('right').listen();
-    f1.open();
 
     var f2 = gui.addFolder('data');
     f2.add(movement, 'dragF', -0.1, 0.1).step(0.01).name('dragF').listen();
@@ -398,9 +439,6 @@ function createMenu() {
     f2.add(movement, 'accT', -0.1, 0.1).step(0.01).name('accT').listen();
     f2.add(movement, 'speed', -0.1, 0.1).step(0.01).name('speed').listen();
     f2.add(movement, 'turn', -0.1, 0.1).step(0.01).name('turn').listen();
-    f2.open();
-
-
 }
 
 
