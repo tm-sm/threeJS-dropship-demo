@@ -51,6 +51,10 @@ const propellerCasingLeft = new THREE.Group();
 const propellerCasingRight = new THREE.Group();
 const propellerCasings = new THREE.Group();
 
+const collisionRaycast = new THREE.Raycaster();
+
+var terrain;
+
 
 // ==========================================
 // RENDERER SETUP
@@ -66,107 +70,56 @@ document.body.appendChild( renderer.domElement );
 
 // Set up lighting
 function setLights() {
-    // Ambient light for overall illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Adjust intensity as needed
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
 
-    // Directional light to simulate sunlight
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 10.0);
-    directionalLight.position.set(100, 200, 100);
-    directionalLight.lookAt(origin)
+    const directionalLight = new THREE.DirectionalLight(0xff7b22, 20.0);
+    directionalLight.position.set(100, 100, 100);
+    directionalLight.lookAt(0, 0, 0);
     directionalLight.castShadow = true;
 
-    directionalLight.shadow.mapSize.width = 1024; 
-    directionalLight.shadow.mapSize.height = 1024;
-    directionalLight.shadow.camera.near = 0.5;
-    directionalLight.shadow.camera.far = 50;
-    directionalLight.shadow.camera.left = -15;
-    directionalLight.shadow.camera.right = 15;
-    directionalLight.shadow.camera.top = 15;
-    directionalLight.shadow.camera.bottom = -15;
+    directionalLight.shadow.mapSize.width = 2048; 
+    directionalLight.shadow.mapSize.height = 2048;
+
+    directionalLight.shadow.camera.near = 1; 
+    directionalLight.shadow.camera.far = 500;
+    directionalLight.shadow.camera.left = -500;
+    directionalLight.shadow.camera.right = 500;
+    directionalLight.shadow.camera.top = 500;
+    directionalLight.shadow.camera.bottom = -500;
 
     scene.add(directionalLight);
 
-    // Optional: Add hemispheric light for ambient illumination
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5); // Sky color, ground color, intensity
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5); // Adjusted intensity
     scene.add(hemisphereLight);
 }
 
 // Set up terrain
 function setupTerrain() {
-
-    const segmentWidth = 10;
-    const segmentLength = 10;
+    const segmentWidth = 5;
+    const segmentLength = 5;
     const width = 1000;
     const length = 1000;
     
-    // Get the vertices and indices
     const { vertices, indices } = setVerticesAndIndices(segmentWidth, segmentLength, width, length);
-    const uvs = generateUVs(segmentWidth, segmentLength, width, length);
     
-    // Create the geometry
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3)); // 3 values per vertex (x, y, z)
-    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2)); // Add UVs to geometry (2 values per vertex)
-    geometry.setIndex(new THREE.BufferAttribute(indices, 1)); // Index array
-    
-    // Create a mesh
-    const material = new THREE.ShaderMaterial({
-        uniforms: {
-            noiseTexture: { value: new THREE.TextureLoader().load('public/noise/noise_map.png') }, // Load the noise map
-            amplitude: { value: 30.0 }, 
-        },
-        vertexShader: `
-        uniform sampler2D noiseTexture;
-        uniform float amplitude;
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
 
-        varying vec2 vUv; 
+    geometry.computeVertexNormals();
 
-        void main() {
-            vUv = uv;
+    const material = new THREE.MeshStandardMaterial({ 
+        color: new THREE.Color(0x338888),
+        roughness: 0.3,
+        metalness: 0.8,
+        side: THREE.DoubleSide
+    }); 
 
-            vec3 pos = position;
-
-            float noiseValue = texture2D(noiseTexture, uv).r;
-
-            noiseValue = clamp(noiseValue, 0.0, 1.0);
-
-            pos.y += noiseValue * amplitude;
-
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        }
-    `,
-    fragmentShader: `
-    varying vec2 vUv;
-
-    void main() {
-        
-        gl_FragColor = vec4(0.0, 0.2, 0.2, 0.9); // Green color
-    }
-    `,
-    side: THREE.DoubleSide,
-    wireframe: true,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-}
-
-function generateUVs(segmentWidth, segmentLength, width, length) {
-    const segmentsX = width / segmentWidth;
-    const segmentsZ = length / segmentLength;
-
-    const uvs = new Float32Array((segmentsX + 1) * (segmentsZ + 1) * 2); 
-
-    let uvIndex = 0;
-
-    for (let i = 0; i <= segmentsX; i++) {
-        for (let j = 0; j <= segmentsZ; j++) {
-            uvs[uvIndex++] = i / segmentsX; // u
-            uvs[uvIndex++] = j / segmentsZ; // v
-        }
-    }
-
-    return uvs;
+    terrain = new THREE.Mesh(geometry, material);
+    terrain.castShadow = true;
+    terrain.receiveShadow = true;
+    scene.add(terrain);
 }
 
 function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
@@ -189,7 +142,7 @@ function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
             let x = offsetX + i * segmentWidth;
             let z = offsetZ + j * segmentLength;
             vertices[vertIndex++] = x;
-            vertices[vertIndex++] = 0;
+            vertices[vertIndex++] = terrainNoise(x, z);
             vertices[vertIndex++] = z;
         }
     }
@@ -218,6 +171,20 @@ function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
     return { vertices, indices };
 }
 
+function terrainNoise(x, z) {
+    const frequency1 = 0.01;
+    const frequency2 = 0.005;
+    const amplitude1 = 20;
+    const amplitude2 = 10; 
+
+    return (
+        Math.sin(x * frequency1) * amplitude1 +
+        Math.cos(z * frequency1) * amplitude1 +
+        Math.sin(x * frequency2) * (amplitude2 / 2) +
+        Math.cos(z * frequency2) * (amplitude2 / 2)
+    );
+}
+
 function addHelpers() {
     const axesHelper = new THREE.AxesHelper( 5 );
     const box = new THREE.BoxHelper( propellerCasingLeft.getObjectByName('propLMesh'), 0xffff00 );
@@ -232,7 +199,7 @@ function addHelpers() {
 function loadExternalModels() {
     loader.load( 'public/models/dropship/airframe.glb', function ( gltf ) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0xff0000});
+        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x001100});
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
@@ -244,7 +211,7 @@ function loadExternalModels() {
 
     loader.load( 'public/models/dropship/cockpit.glb', function ( gltf ) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x0000ff});
+        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x222255});
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
@@ -256,7 +223,7 @@ function loadExternalModels() {
 
     loader.load( 'public/models/dropship/wings.glb', function ( gltf ) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0xff0000});
+        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x001100});
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
@@ -268,7 +235,7 @@ function loadExternalModels() {
 
     loader.load( 'public/models/dropship/ramp.glb', function ( gltf ) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0xff0000});
+        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x001100});
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
@@ -280,7 +247,7 @@ function loadExternalModels() {
 
     loader.load( 'public/models/dropship/propeller_l.glb', function ( gltf ) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0xffff00});
+        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x001100});
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
@@ -294,7 +261,7 @@ function loadExternalModels() {
 
     loader.load( 'public/models/dropship/propeller_r.glb', function ( gltf ) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+        var modelMaterial = new THREE.MeshStandardMaterial({ color: 0x001100 });
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
@@ -328,7 +295,7 @@ function loadExternalModels() {
 // ==========================================
 const forwardAcceleration = 1.5;
 const backwardAcceleration = -1.3;
-const leftAcceleration = -0.01;
+const leftAcceleration = -0.2;
 const rightAcceleration = -leftAcceleration;
 const leftTurnAcceleration = 1;
 const rightTurnAcceleration = -leftTurnAcceleration;
@@ -337,7 +304,7 @@ const downAcceleration = -0.6;
 
 const maxBackwardAcceleration = -300;
 const maxForwardAcceleration = 400;
-const maxLeftAcceleration = -30;
+const maxLeftAcceleration = -60;
 const maxRightAcceleration = -maxLeftAcceleration;
 const maxLeftTurningAcceleration = 20;
 const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
@@ -388,7 +355,7 @@ function handleMovement() {
     } else if (accelerating.right) {
         totalHorizontalAcceleration = Math.max(totalHorizontalAcceleration + rightAcceleration, maxRightAcceleration);
     } else {
-        totalHorizontalAcceleration -= (airDrag * horizontalSpeed) * 0.1;
+        totalHorizontalAcceleration -= (airDrag * horizontalSpeed) * 0.4;
     }
 
     horizontalSpeed = totalHorizontalAcceleration - (airDrag * horizontalSpeed);
@@ -414,6 +381,7 @@ function handleMovement() {
         totalVerticalAcceleration -= (airDrag * verticalSpeed);
     }
 
+    // Dynamic max vertical speed calculation
     verticalSpeed = totalVerticalAcceleration - (airDrag * verticalSpeed);
 
     // Apply local movement
@@ -422,7 +390,21 @@ function handleMovement() {
     globalDropshipMovement.rotateY(turningSpeed / 1000);
     globalDropshipMovement.translateY(verticalSpeed / 1000);
 
-
+    let objects = [];
+    objects.push(terrain);
+    let shipPosition = globalDropshipMovement.position.clone();
+    let rayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z);
+    collisionRaycast.set(rayOrigin, new THREE.Vector3(0, -1, 0));
+    
+    let intersects = collisionRaycast.intersectObjects(objects);
+    
+    if (intersects.length > 0) {
+        const distanceToGround = intersects[0].distance;
+        movement.height = distanceToGround;
+        if (distanceToGround < 4) {
+            globalDropshipMovement.translateY(0.1);
+        }
+    }
 
     // Update movement values for debugging purposes
     movement.accF = totalForwardAcceleration;
@@ -456,7 +438,7 @@ function handleRotationVisuals() {
     } else if (accelerating.backward) {
         cumulativeForwardIndicator = Math.max(cumulativeForwardIndicator - step, -1);
     } else if (cumulativeForwardIndicator != 0) {
-        cumulativeForwardIndicator -= (cumulativeForwardIndicator >= 0) ? step / 4 : -step / 4;
+        cumulativeForwardIndicator -= step * cumulativeForwardIndicator * 1.2;
     }
 
     // Negative due to anti-clockwise positive rotation in WebGL
@@ -468,7 +450,7 @@ function handleRotationVisuals() {
     } else if (accelerating.turnRight) {
         cumulativeTurningIndicator = Math.max(cumulativeTurningIndicator - step, -1);
     } else if (cumulativeTurningIndicator != 0) {
-        cumulativeTurningIndicator -= (cumulativeTurningIndicator >= 0) ? step / 4 : -step / 4;
+        cumulativeTurningIndicator -= cumulativeTurningIndicator * step * 2;
     }
 
     if (cumulativeTurningIndicator >= 0) {
@@ -486,7 +468,7 @@ function handleRotationVisuals() {
     } else if (accelerating.right) {
         cumulativeHorizontalIndicator = Math.min(cumulativeHorizontalIndicator + step * 1.5, 1);
     } else if (cumulativeHorizontalIndicator != 0) {
-        cumulativeHorizontalIndicator -= (cumulativeHorizontalIndicator >= 0) ? step / 2 : -step / 2;
+        cumulativeHorizontalIndicator -= step * cumulativeHorizontalIndicator * 1.3;
     }
 
     airframe.rotation.x += cumulativeHorizontalIndicator * maxAirframeTilt;
@@ -656,6 +638,7 @@ function animate() {
 // =========================================
 
 const movement = {
+    height: 0.0,
     dragF: 0.0,
     dragT: 0.0,
     accF: 0.0,
@@ -680,6 +663,7 @@ function createMenu() {
     f1.add(accelerating, 'down').name('down').listen();
 
     var f2 = gui.addFolder('data');
+    f2.add(movement, 'height', 0, 100).step(0.5).name('height').listen();
     f2.add(movement, 'dragF', -4, 4).step(0.1).name('dragF').listen();
     f2.add(movement, 'dragT', -0.5, 0.5).step(0.1).name('dragT').listen();
     f2.add(movement, 'accF', -400, 400).step(0.1).name('accF').listen();
