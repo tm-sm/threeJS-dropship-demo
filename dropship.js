@@ -64,24 +64,160 @@ document.body.appendChild( renderer.domElement );
 // SETUP FUNCTIONS
 // ==========================================
 
-// Set up lighting for the scene
+// Set up lighting
 function setLights() {
-    const ambientLight = new THREE.AmbientLight( 0xffffff );
-    const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-    scene.add( ambientLight );
-    scene.add( directionalLight );
+    // Ambient light for overall illumination
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Adjust intensity as needed
+    scene.add(ambientLight);
+
+    // Directional light to simulate sunlight
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 10.0);
+    directionalLight.position.set(100, 200, 100);
+    directionalLight.lookAt(origin)
+    directionalLight.castShadow = true;
+
+    directionalLight.shadow.mapSize.width = 1024; 
+    directionalLight.shadow.mapSize.height = 1024;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.camera.left = -15;
+    directionalLight.shadow.camera.right = 15;
+    directionalLight.shadow.camera.top = 15;
+    directionalLight.shadow.camera.bottom = -15;
+
+    scene.add(directionalLight);
+
+    // Optional: Add hemispheric light for ambient illumination
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5); // Sky color, ground color, intensity
+    scene.add(hemisphereLight);
 }
 
-// Set up terrain for the scene
+// Set up terrain
 function setupTerrain() {
-    const terrainGeometry = new THREE.PlaneGeometry(500, 500);
-    const material = new THREE.MeshBasicMaterial( { color: 0x333333 } );
-    const terrain = new THREE.Mesh(terrainGeometry, material);
-    terrain.rotation.x -= Math.PI / 2.0;
-    scene.add(terrain);
+
+    const segmentWidth = 10;
+    const segmentLength = 10;
+    const width = 1000;
+    const length = 1000;
+    
+    // Get the vertices and indices
+    const { vertices, indices } = setVerticesAndIndices(segmentWidth, segmentLength, width, length);
+    const uvs = generateUVs(segmentWidth, segmentLength, width, length);
+    
+    // Create the geometry
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3)); // 3 values per vertex (x, y, z)
+    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2)); // Add UVs to geometry (2 values per vertex)
+    geometry.setIndex(new THREE.BufferAttribute(indices, 1)); // Index array
+    
+    // Create a mesh
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            noiseTexture: { value: new THREE.TextureLoader().load('public/noise/noise_map.png') }, // Load the noise map
+            amplitude: { value: 30.0 }, 
+        },
+        vertexShader: `
+        uniform sampler2D noiseTexture;
+        uniform float amplitude;
+
+        varying vec2 vUv; 
+
+        void main() {
+            vUv = uv;
+
+            vec3 pos = position;
+
+            float noiseValue = texture2D(noiseTexture, uv).r;
+
+            noiseValue = clamp(noiseValue, 0.0, 1.0);
+
+            pos.y += noiseValue * amplitude;
+
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        }
+    `,
+    fragmentShader: `
+    varying vec2 vUv;
+
+    void main() {
+        
+        gl_FragColor = vec4(0.0, 0.2, 0.2, 0.9); // Green color
+    }
+    `,
+    side: THREE.DoubleSide,
+    wireframe: true,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
 }
 
-// Add helpers (like axes) to the scene
+function generateUVs(segmentWidth, segmentLength, width, length) {
+    const segmentsX = width / segmentWidth;
+    const segmentsZ = length / segmentLength;
+
+    const uvs = new Float32Array((segmentsX + 1) * (segmentsZ + 1) * 2); 
+
+    let uvIndex = 0;
+
+    for (let i = 0; i <= segmentsX; i++) {
+        for (let j = 0; j <= segmentsZ; j++) {
+            uvs[uvIndex++] = i / segmentsX; // u
+            uvs[uvIndex++] = j / segmentsZ; // v
+        }
+    }
+
+    return uvs;
+}
+
+function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
+    const segmentsX = width / segmentWidth;
+    const segmentsZ = length / segmentLength;
+
+    const verticesCount = (segmentsX + 1) * (segmentsZ + 1);
+    const vertices = new Float32Array(verticesCount * 3); // 3 values (x, y, z) per vertex
+
+    const indicesCount = segmentsX * segmentsZ * 6;
+    const indices = new Uint16Array(indicesCount);
+
+    let offsetX = -width / 2;
+    let offsetZ = -length / 2;
+
+    // Define vertices in mesh
+    let vertIndex = 0;
+    for (let i = 0; i <= segmentsX; i++) {
+        for (let j = 0; j <= segmentsZ; j++) {
+            let x = offsetX + i * segmentWidth;
+            let z = offsetZ + j * segmentLength;
+            vertices[vertIndex++] = x;
+            vertices[vertIndex++] = 0;
+            vertices[vertIndex++] = z;
+        }
+    }
+
+
+    let index = 0;
+    for (let i = 0; i < segmentsX; i++) {
+        for (let j = 0; j < segmentsZ; j++) {
+            let a = i * (segmentsZ + 1) + j;           // Top left
+            let b = (i + 1) * (segmentsZ + 1) + j;     // Top right
+            let c = i * (segmentsZ + 1) + (j + 1);     // Bottom left
+            let d = (i + 1) * (segmentsZ + 1) + (j + 1); // Bottom right
+
+            // First triangle in segment
+            indices[index++] = a;
+            indices[index++] = b;
+            indices[index++] = c;
+
+            // Second triangle in segment
+            indices[index++] = c;
+            indices[index++] = b;
+            indices[index++] = d;
+        }
+    }
+
+    return { vertices, indices };
+}
+
 function addHelpers() {
     const axesHelper = new THREE.AxesHelper( 5 );
     const box = new THREE.BoxHelper( propellerCasingLeft.getObjectByName('propLMesh'), 0xffff00 );
@@ -183,7 +319,7 @@ function loadExternalModels() {
     pitchDropshipMovement.add(airframe);
     globalDropshipMovement.add(pitchDropshipMovement);
 
-    globalDropshipMovement.position.y = 3;
+    globalDropshipMovement.position.y = 30;
     scene.add(globalDropshipMovement);
 }
 
@@ -192,7 +328,7 @@ function loadExternalModels() {
 // ==========================================
 const forwardAcceleration = 1.5;
 const backwardAcceleration = -1.3;
-const leftAcceleration = -0.1;
+const leftAcceleration = -0.01;
 const rightAcceleration = -leftAcceleration;
 const leftTurnAcceleration = 1;
 const rightTurnAcceleration = -leftTurnAcceleration;
@@ -208,7 +344,7 @@ const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
 const maxUpAcceleration = 50;
 const maxDownAcceleration = -50;
 
-const airDrag = 0.01; // Controls how fast the ship comes to a stop
+const airDrag = 0.03; // Controls how fast the ship comes to a stop
 
 var totalForwardAcceleration = 0;
 var totalHorizontalAcceleration = 0;
@@ -377,10 +513,10 @@ const zKey = 90;
 const xKey = 88;
 const qKey = 81;
 const eKey = 69;
-const numOne = 97;
-const numTwo = 98;
-const numThree = 99;
-const numFour = 100;
+const numOne = 49;
+const numTwo = 50;
+const numThree = 51;
+const numFour = 52;
 
 const keyState = {
     w: false,
