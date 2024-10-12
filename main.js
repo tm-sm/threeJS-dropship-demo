@@ -17,9 +17,9 @@ const loader = new GLTFLoader();
 
 var currentCamera;
 
-const chaseCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-const topViewCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-const sideViewCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const chaseCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
+const topViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
+const sideViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
 
 currentCamera = chaseCamera;
 
@@ -73,7 +73,7 @@ function setLights() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xff7b22, 20.0);
+    const directionalLight = new THREE.DirectionalLight(0xcccccc, 5.0);
     directionalLight.position.set(100, 100, 100);
     directionalLight.lookAt(0, 0, 0);
     directionalLight.castShadow = true;
@@ -96,10 +96,10 @@ function setLights() {
 
 // Set up terrain
 function setupTerrain() {
-    const segmentWidth = 5;
-    const segmentLength = 5;
-    const width = 1000;
-    const length = 1000;
+    const segmentWidth = 100;
+    const segmentLength = 100;
+    const width = 5000;
+    const length = 5000;
     
     const { vertices, indices } = setVerticesAndIndices(segmentWidth, segmentLength, width, length);
     
@@ -110,9 +110,9 @@ function setupTerrain() {
     geometry.computeVertexNormals();
 
     const material = new THREE.MeshStandardMaterial({ 
-        color: new THREE.Color(0x338888),
-        roughness: 0.3,
-        metalness: 0.8,
+        color: new THREE.Color(0xCBBD93),
+        roughness: 1.0,
+        metalness: 0.3,
         side: THREE.DoubleSide
     }); 
 
@@ -120,6 +120,7 @@ function setupTerrain() {
     terrain.castShadow = true;
     terrain.receiveShadow = true;
     scene.add(terrain);
+    scene.background = new THREE.Color(0xbbbbff)
 }
 
 function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
