@@ -4,8 +4,11 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
+import { setLights } from './lights.js'
+import { setupTerrain } from './terrain.js'
+import { accelerating } from './controls.js'
+import { loadControls } from './controls.js'
+import { loadExternalModels } from './glbLoader.js';
 
 // ==========================================
 // GLOBAL CONSTANTS AND VARIABLES
@@ -13,7 +16,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer();
-const loader = new GLTFLoader();
 
 var currentCamera;
 
@@ -68,124 +70,6 @@ document.body.appendChild( renderer.domElement );
 // SETUP FUNCTIONS
 // ==========================================
 
-// Set up lighting
-function setLights() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xcccccc, 5.0);
-    directionalLight.position.set(100, 100, 100);
-    directionalLight.lookAt(0, 0, 0);
-    directionalLight.castShadow = true;
-
-    directionalLight.shadow.mapSize.width = 2048; 
-    directionalLight.shadow.mapSize.height = 2048;
-
-    directionalLight.shadow.camera.near = 1; 
-    directionalLight.shadow.camera.far = 500;
-    directionalLight.shadow.camera.left = -500;
-    directionalLight.shadow.camera.right = 500;
-    directionalLight.shadow.camera.top = 500;
-    directionalLight.shadow.camera.bottom = -500;
-
-    scene.add(directionalLight);
-
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5); // Adjusted intensity
-    scene.add(hemisphereLight);
-}
-
-// Set up terrain
-function setupTerrain() {
-    const segmentWidth = 100;
-    const segmentLength = 100;
-    const width = 5000;
-    const length = 5000;
-    
-    const { vertices, indices } = setVerticesAndIndices(segmentWidth, segmentLength, width, length);
-    
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-
-    geometry.computeVertexNormals();
-
-    const material = new THREE.MeshStandardMaterial({ 
-        color: new THREE.Color(0xCBBD93),
-        roughness: 1.0,
-        metalness: 0.3,
-        side: THREE.DoubleSide
-    }); 
-
-    terrain = new THREE.Mesh(geometry, material);
-    terrain.castShadow = true;
-    terrain.receiveShadow = true;
-    scene.add(terrain);
-    scene.background = new THREE.Color(0xbbbbff)
-}
-
-function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
-    const segmentsX = width / segmentWidth;
-    const segmentsZ = length / segmentLength;
-
-    const verticesCount = (segmentsX + 1) * (segmentsZ + 1);
-    const vertices = new Float32Array(verticesCount * 3); // 3 values (x, y, z) per vertex
-
-    const indicesCount = segmentsX * segmentsZ * 6;
-    const indices = new Uint16Array(indicesCount);
-
-    let offsetX = -width / 2;
-    let offsetZ = -length / 2;
-
-    // Define vertices in mesh
-    let vertIndex = 0;
-    for (let i = 0; i <= segmentsX; i++) {
-        for (let j = 0; j <= segmentsZ; j++) {
-            let x = offsetX + i * segmentWidth;
-            let z = offsetZ + j * segmentLength;
-            vertices[vertIndex++] = x;
-            vertices[vertIndex++] = terrainNoise(x, z);
-            vertices[vertIndex++] = z;
-        }
-    }
-
-
-    let index = 0;
-    for (let i = 0; i < segmentsX; i++) {
-        for (let j = 0; j < segmentsZ; j++) {
-            let a = i * (segmentsZ + 1) + j;           // Top left
-            let b = (i + 1) * (segmentsZ + 1) + j;     // Top right
-            let c = i * (segmentsZ + 1) + (j + 1);     // Bottom left
-            let d = (i + 1) * (segmentsZ + 1) + (j + 1); // Bottom right
-
-            // First triangle in segment
-            indices[index++] = a;
-            indices[index++] = b;
-            indices[index++] = c;
-
-            // Second triangle in segment
-            indices[index++] = c;
-            indices[index++] = b;
-            indices[index++] = d;
-        }
-    }
-
-    return { vertices, indices };
-}
-
-function terrainNoise(x, z) {
-    const frequency1 = 0.01;
-    const frequency2 = 0.005;
-    const amplitude1 = 20;
-    const amplitude2 = 10; 
-
-    return (
-        Math.sin(x * frequency1) * amplitude1 +
-        Math.cos(z * frequency1) * amplitude1 +
-        Math.sin(x * frequency2) * (amplitude2 / 2) +
-        Math.cos(z * frequency2) * (amplitude2 / 2)
-    );
-}
-
 function addHelpers() {
     const axesHelper = new THREE.AxesHelper( 5 );
     const box = new THREE.BoxHelper( propellerCasingLeft.getObjectByName('propLMesh'), 0xffff00 );
@@ -193,103 +77,7 @@ function addHelpers() {
     scene.add( axesHelper );
 }
 
-// ==========================================
-// LOAD EXTERNAL MODELS
-// ==========================================
 
-function loadExternalModels() {
-    loader.load( 'public/models/dropship/airframe.glb', function ( gltf ) {
-        var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x001100});
-        model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
-        });
-        gltf.scene.name = 'aiframeMesh';
-        airframe.add(gltf.scene);
-    }, undefined, function ( error ) {
-        console.error( error );
-    });
-
-    loader.load( 'public/models/dropship/cockpit.glb', function ( gltf ) {
-        var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x222255});
-        model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
-        });
-        gltf.scene.name = 'cockpitMesh';
-        cockpit.add(gltf.scene);
-    }, undefined, function ( error ) {
-        console.error( error );
-    });
-
-    loader.load( 'public/models/dropship/wings.glb', function ( gltf ) {
-        var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x001100});
-        model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
-        });
-        gltf.scene.name = 'wingsMesh';
-        wings.add(gltf.scene);
-    }, undefined, function ( error ) {
-        console.error( error );
-    });
-
-    loader.load( 'public/models/dropship/ramp.glb', function ( gltf ) {
-        var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x001100});
-        model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
-        });
-        gltf.scene.name = 'rampMesh';
-        ramp.add(gltf.scene);
-    }, undefined, function ( error ) {
-        console.error( error );
-    });
-
-    loader.load( 'public/models/dropship/propeller_l.glb', function ( gltf ) {
-        var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x001100});
-        model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
-        });
-        gltf.scene.name = 'propLMesh';
-        gltf.scene.position.x = 1.48602;
-        gltf.scene.position.y = 0.602539;
-        propellerCasingLeft.add(model);
-    }, undefined, function ( error ) {
-        console.error( error );
-    });
-
-    loader.load( 'public/models/dropship/propeller_r.glb', function ( gltf ) {
-        var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({ color: 0x001100 });
-        model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
-        });
-        gltf.scene.name = 'propRMesh';
-        gltf.scene.position.x = 1.48602;
-        gltf.scene.position.y = 0.602539;
-        propellerCasingRight.add(model);
-    }, undefined, function ( error ) {
-        console.error( error );
-    });
-
-    propellerCasings.add(propellerCasingLeft);
-    propellerCasings.add(propellerCasingRight);
-    propellerCasings.position.x = -1.48602;
-    propellerCasings.position.y = -0.602539;
-
-    airframe.add(wings);
-    airframe.add(ramp);
-    airframe.add(propellerCasings);
-    airframe.add(cockpit);
-
-    pitchDropshipMovement.add(airframe);
-    globalDropshipMovement.add(pitchDropshipMovement);
-
-    globalDropshipMovement.position.y = 30;
-    scene.add(globalDropshipMovement);
-}
 
 // ==========================================
 // MOVEMENT HANDLER
@@ -323,17 +111,6 @@ var forwardSpeed = 0;
 var horizontalSpeed = 0;
 var turningSpeed = 0;
 var verticalSpeed = 0;
-
-var accelerating = {
-    forward: false,
-    backward: false,
-    right: false,
-    left: false,
-    turnRight: false,
-    turnLeft: false,
-    up: false,
-    down: false,
-};
 
 function handleMovement() {
 
@@ -483,144 +260,6 @@ function updateCameras() {
 
 }
 
-
-// ==========================================
-// INPUT HANDLERS
-// ==========================================
-
-const wKey = 87;
-const sKey = 83;
-const aKey = 65;
-const dKey = 68;
-const zKey = 90;
-const xKey = 88;
-const qKey = 81;
-const eKey = 69;
-const numOne = 49;
-const numTwo = 50;
-const numThree = 51;
-const numFour = 52;
-
-const keyState = {
-    w: false,
-    s: false,
-    a: false,
-    d: false,
-    z: false,
-    x: false,
-    q: false,
-    e: false,
-};
-
-document.addEventListener('keydown', (e) => {
-    switch (e.keyCode) {
-        case wKey:
-            keyState.w = true;
-            accelerating.forward = true;
-            accelerating.backward = false;
-            break;
-        case sKey:
-            keyState.s = true;
-            accelerating.backward = true;
-            accelerating.forward = false;
-            break;
-        case aKey:
-            keyState.a = true;
-            accelerating.left = true;
-            accelerating.right = false;
-            break;
-        case dKey:
-            keyState.d = true;
-            accelerating.right = true;
-            accelerating.left = false;
-            break;
-        case zKey:
-            keyState.z = true;
-            accelerating.turnLeft = true;
-            accelerating.turnRight = false;
-            break;
-        case xKey:
-            keyState.x = true;
-            accelerating.turnRight = true;
-            accelerating.turnLeft = false;
-            break;
-        case qKey:
-            keyState.q = true;
-            accelerating.up = true;
-            accelerating.down = false;
-            break;
-        case eKey:
-            keyState.e = true;
-            accelerating.down = true;
-            accelerating.up = false;
-            break;
-        case numOne:
-            break;
-        case numTwo:
-            currentCamera = chaseCamera;
-            break;
-        case numThree:
-            currentCamera = topViewCamera;
-            break;
-        case numFour:
-            currentCamera = sideViewCamera;
-            break;
-        default:
-            break;
-    }
-});
-
-document.addEventListener('keyup', (e) => {
-    switch (e.keyCode) {
-        case wKey:
-            keyState.w = false;
-            accelerating.forward = false;
-            break;
-        case sKey:
-            keyState.s = false;
-            accelerating.backward = false;
-            break;
-        case aKey:
-            keyState.a = false;
-            accelerating.left = false;
-            break;
-        case dKey:
-            keyState.d = false;
-            accelerating.right = false;
-            break;
-         case zKey:
-            keyState.z = false;
-            accelerating.turnLeft = false;
-            break;
-        case xKey:
-            keyState.x = false;
-            accelerating.turnRight = false;
-            break;
-        case qKey:
-            keyState.q = false;
-            accelerating.up = false;
-            break;
-        case eKey:
-            keyState.e = false;
-            accelerating.down = false;
-            break;
-        default:
-            break;
-    }
-
-    // Stop movement/turning when no keys are pressed
-    if (!keyState.w && !keyState.s) {
-        accelerating.forward = false;
-        accelerating.backward = false;
-    }
-
-    if (!keyState.a && !keyState.d) {
-        accelerating.turnLeft = false;
-        accelerating.turnRight = false;
-    }
-});
-
-
 // ==========================================
 // SIMULATION LOOP
 // ==========================================
@@ -678,8 +317,10 @@ function createMenu() {
 // INITIALIZE SCENE
 // ==========================================
 
-setLights();
-setupTerrain();
+setLights(scene);
+terrain = setupTerrain(scene, terrain);
 addHelpers();
-loadExternalModels();
-createMenu();
+loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, propellerCasings,
+    propellerCasingLeft, propellerCasingRight);
+loadControls();
+//createMenu();
