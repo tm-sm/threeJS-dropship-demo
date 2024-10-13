@@ -88,23 +88,23 @@ function addHelpers() {
 // ==========================================
 // MOVEMENT HANDLER
 // ==========================================
-const forwardAcceleration = 1.5;
-const backwardAcceleration = -1.3;
-const leftAcceleration = -0.2;
+const forwardAcceleration = 3;
+const backwardAcceleration = -2;
+const leftAcceleration = -2;
 const rightAcceleration = -leftAcceleration;
 const leftTurnAcceleration = 1;
 const rightTurnAcceleration = -leftTurnAcceleration;
-const upAcceleration = 0.8;
-const downAcceleration = -0.6;
+const upAcceleration = 3;
+const downAcceleration = -2;
 
-const maxBackwardAcceleration = -300;
-const maxForwardAcceleration = 400;
-const maxLeftAcceleration = -60;
+const maxBackwardAcceleration = -600;
+const maxForwardAcceleration = 800;
+const maxLeftAcceleration = -100;
 const maxRightAcceleration = -maxLeftAcceleration;
 const maxLeftTurningAcceleration = 20;
 const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
-const maxUpAcceleration = 50;
-const maxDownAcceleration = -50;
+const maxUpAcceleration = 100;
+const maxDownAcceleration = -100;
 
 const airDrag = 0.03; // Controls how fast the ship comes to a stop
 
@@ -173,8 +173,6 @@ function handleMovement() {
     globalDropshipMovement.translateZ(horizontalSpeed / 1000);
     globalDropshipMovement.rotateY(turningSpeed / 1000);
     globalDropshipMovement.translateY(verticalSpeed / 1000);
-    bladesLeft.rotateY(0.9);
-    bladesRight.rotateY(-0.9);
 
     let objects = [];
     objects.push(terrain);
@@ -207,9 +205,11 @@ const step = 0.02; // Controls how 'violently' the dropship reacts to input
 var cumulativeForwardIndicator = 0.0;
 var cumulativeHorizontalIndicator = 0.0;
 var cumulativeTurningIndicator = 0.0;
+var cumulativeVerticalIndicator = 0.0;
 
 const maxAirframePitchDown = Math.PI / 10;
 const maxPropsPitchDown = Math.PI / 8;
+const maxBladePitch = Math.PI / 8;
 
 const maxAirframePitchUp = Math.PI / 12;
 const maxPropsPitchUp = Math.PI / 10;
@@ -258,6 +258,25 @@ function handleRotationVisuals() {
     }
 
     airframe.rotation.x += cumulativeHorizontalIndicator * maxAirframeTilt;
+
+    if (accelerating.up) {
+        cumulativeVerticalIndicator = Math.min(cumulativeVerticalIndicator + step, 1);
+    } else if (accelerating.down) {
+        cumulativeVerticalIndicator = Math.max(cumulativeVerticalIndicator - step, -1);
+    } else if (cumulativeVerticalIndicator != 0) {
+        cumulativeVerticalIndicator -= step * cumulativeVerticalIndicator * 2;
+    }
+
+    bladesRight.getObjectByName('b1').rotation.z = (cumulativeVerticalIndicator * maxBladePitch);
+    bladesRight.getObjectByName('b2').rotation.z = (cumulativeVerticalIndicator * maxBladePitch);
+    bladesRight.getObjectByName('b3').rotation.z = (cumulativeVerticalIndicator * maxBladePitch);
+
+    bladesLeft.getObjectByName('b1').rotation.z = -(cumulativeVerticalIndicator * maxBladePitch);
+    bladesLeft.getObjectByName('b2').rotation.z = -(cumulativeVerticalIndicator * maxBladePitch);
+    bladesLeft.getObjectByName('b3').rotation.z = -(cumulativeVerticalIndicator * maxBladePitch);
+
+    bladesLeft.rotateY(-2.887);
+    bladesRight.rotateY(2.887);
 }
 
 // ==========================================

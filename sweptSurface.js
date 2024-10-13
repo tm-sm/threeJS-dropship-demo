@@ -13,7 +13,7 @@ export function createBladeGeometry() {
         new THREE.Vector3(0, 0, 0),
         new THREE.Vector3(0, 0, 1),
         new THREE.Vector3(0, 0, 2),
-        new THREE.Vector3(0.01, 0, 5)
+        new THREE.Vector3(0.01, 0, 6.6)
     );
 
     const points = bladeCurve.getPoints(30); 

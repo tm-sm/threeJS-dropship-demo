@@ -109,8 +109,8 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
 
     addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight);
 
-    engineRight.position.z = 3.98655;
-    engineLeft.position.z = -3.98655;
+    engineRight.position.z = 6.3;
+    engineLeft.position.z = -6.3;
 
     engines.add(engineLeft);
     engines.add(engineRight);
@@ -137,6 +137,14 @@ function addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight) {
     const rightBlade2 = new THREE.Mesh(g, material);
     const rightBlade3 = new THREE.Mesh(g, material);
 
+    rightBlade1.name = 'b1';
+    rightBlade2.name = 'b2';
+    rightBlade3.name = 'b3';
+
+    rightBlade1.scale.set(-1, 1, 1);
+    rightBlade2.scale.set(-1, 1, 1);
+    rightBlade3.scale.set(-1, 1, 1);
+
     bladesRight.add(rightBlade1);
     rightBlade2.rotation.y = 2.0944;
     bladesRight.add(rightBlade2);
@@ -146,6 +154,10 @@ function addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight) {
     const leftBlade1 = new THREE.Mesh(g, material);
     const leftBlade2 = new THREE.Mesh(g, material);
     const leftBlade3 = new THREE.Mesh(g, material);
+
+    leftBlade1.name = 'b1';
+    leftBlade2.name = 'b2';
+    leftBlade3.name = 'b3';
 
     bladesLeft.add(leftBlade1);
     leftBlade2.rotation.y = 2.0944;
