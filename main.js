@@ -19,6 +19,8 @@ import { currentCamera } from './controls.js'
 
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer();
+const clock = new THREE.Clock();
+
 
 export const chaseCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
 export const topViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
@@ -90,9 +92,9 @@ function addHelpers() {
 // ==========================================
 const forwardAcceleration = 3;
 const backwardAcceleration = -2;
-const leftAcceleration = -2;
+const leftAcceleration = -0.8;
 const rightAcceleration = -leftAcceleration;
-const leftTurnAcceleration = 1;
+const leftTurnAcceleration = 0.3;
 const rightTurnAcceleration = -leftTurnAcceleration;
 const upAcceleration = 3;
 const downAcceleration = -2;
@@ -101,7 +103,7 @@ const maxBackwardAcceleration = -600;
 const maxForwardAcceleration = 800;
 const maxLeftAcceleration = -100;
 const maxRightAcceleration = -maxLeftAcceleration;
-const maxLeftTurningAcceleration = 20;
+const maxLeftTurningAcceleration = 15;
 const maxRightTurningAcceleration = -maxLeftTurningAcceleration;
 const maxUpAcceleration = 100;
 const maxDownAcceleration = -100;
@@ -279,6 +281,14 @@ function handleRotationVisuals() {
     bladesRight.rotateY(2.887);
 }
 
+function addBaseMovement() {
+    let delta = clock.getElapsedTime();
+
+    airframe.position.set(Math.sin(delta) * 0.01, Math.cos(delta) * 0.3, Math.sin(delta * 0.8) * 0.1);
+    airframe.rotation.x += Math.sin(delta) * 0.01;
+    airframe.rotation.y = Math.cos(delta * 0.3) * 0.01;
+}
+
 // ==========================================
 // CAMERA HANDLERS
 // ==========================================
@@ -295,6 +305,7 @@ function animate() {
 
     handleMovement();
     handleRotationVisuals();
+    addBaseMovement();
     updateCameras();
 
     controls.update();
