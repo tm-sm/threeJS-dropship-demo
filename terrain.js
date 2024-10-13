@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { noise } from './libs/noisejs/perlin.js'
 
 export function setupTerrain(scene) {
     const segmentWidth = 100;
@@ -15,10 +16,10 @@ export function setupTerrain(scene) {
     geometry.computeVertexNormals();
 
     const material = new THREE.MeshStandardMaterial({ 
-        color: new THREE.Color(0xCBBD93),
+        color: new THREE.Color(0x7D6741),
         roughness: 1.0,
         metalness: 0.3,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
     }); 
 
     var terrain = new THREE.Mesh(geometry, material);
@@ -33,6 +34,7 @@ export function setupTerrain(scene) {
 function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
     const segmentsX = width / segmentWidth;
     const segmentsZ = length / segmentLength;
+    noise.seed(1111); // ?
 
     const verticesCount = (segmentsX + 1) * (segmentsZ + 1);
     const vertices = new Float32Array(verticesCount * 3); // 3 values (x, y, z) per vertex
@@ -49,9 +51,9 @@ function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
         for (let j = 0; j <= segmentsZ; j++) {
             let x = offsetX + i * segmentWidth;
             let z = offsetZ + j * segmentLength;
-            vertices[vertIndex++] = x;
-            vertices[vertIndex++] = terrainNoise(x, z);
-            vertices[vertIndex++] = z;
+            vertices[vertIndex++] = x - 10 * (noise.simplex2(x, z));
+            vertices[vertIndex++] = ((noise.simplex2(x, z) + 1) / 2) * 60;
+            vertices[vertIndex++] = z + (noise.simplex2(x, z));
         }
     }
 
@@ -77,18 +79,4 @@ function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
     }
 
     return { vertices, indices };
-}
-
-function terrainNoise(x, z) {
-    const frequency1 = 0.01;
-    const frequency2 = 0.005;
-    const amplitude1 = 20;
-    const amplitude2 = 10; 
-
-    return (
-        Math.sin(x * frequency1) * amplitude1 +
-        Math.cos(z * frequency1) * amplitude1 +
-        Math.sin(x * frequency2) * (amplitude2 / 2) +
-        Math.cos(z * frequency2) * (amplitude2 / 2)
-    );
 }
