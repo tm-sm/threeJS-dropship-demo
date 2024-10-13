@@ -1,4 +1,7 @@
 import * as THREE from 'three'
+import { chaseCamera, topViewCamera, sideViewCamera, debugCamera } from './main.js'
+
+export var currentCamera;
 
 // ==========================================
 // INPUT HANDLERS
@@ -16,6 +19,7 @@ const numOne = 49;
 const numTwo = 50;
 const numThree = 51;
 const numFour = 52;
+const numNine = 57;
 
 const keyState = {
     w: false,
@@ -41,7 +45,7 @@ export var accelerating = {
 };
 
 export function loadControls() {
-
+    currentCamera = chaseCamera;
     document.addEventListener('keydown', (e) => {
         switch (e.keyCode) {
             case wKey:
@@ -94,6 +98,9 @@ export function loadControls() {
                 break;
             case numFour:
                 currentCamera = sideViewCamera;
+                break;
+            case numNine:
+                currentCamera = debugCamera;
                 break;
             default:
                 break;

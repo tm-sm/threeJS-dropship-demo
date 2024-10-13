@@ -8,7 +8,10 @@ import { setLights } from './lights.js'
 import { setupTerrain } from './terrain.js'
 import { accelerating } from './controls.js'
 import { loadControls } from './controls.js'
-import { loadExternalModels } from './glbLoader.js';
+import { loadExternalModels } from './meshCreator.js';
+import { createBladeGeometry } from './sweptSurface.js';
+
+import { currentCamera } from './controls.js'
 
 // ==========================================
 // GLOBAL CONSTANTS AND VARIABLES
@@ -17,13 +20,15 @@ import { loadExternalModels } from './glbLoader.js';
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer();
 
-var currentCamera;
+export const chaseCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
+export const topViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
+export const sideViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
 
-const chaseCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
-const topViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
-const sideViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
+export const debugCamera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
 
-currentCamera = chaseCamera;
+const controls = new OrbitControls( debugCamera, renderer.domElement );
+
+debugCamera.position.set( 0, 20, 100 );
 
 chaseCamera.position.x = -15;
 chaseCamera.position.y = 6;
@@ -49,9 +54,12 @@ const wings = new THREE.Group();
 const cockpit = new THREE.Group();
 const ramp = new THREE.Group();
 
-const propellerCasingLeft = new THREE.Group();
-const propellerCasingRight = new THREE.Group();
-const propellerCasings = new THREE.Group();
+const engineRight = new THREE.Group();
+const engineLeft = new THREE.Group();
+const engines = new THREE.Group();
+
+const bladesLeft = new THREE.Group();
+const bladesRight = new THREE.Group();
 
 const collisionRaycast = new THREE.Raycaster();
 
@@ -72,12 +80,10 @@ document.body.appendChild( renderer.domElement );
 
 function addHelpers() {
     const axesHelper = new THREE.AxesHelper( 5 );
-    const box = new THREE.BoxHelper( propellerCasingLeft.getObjectByName('propLMesh'), 0xffff00 );
+    const box = new THREE.BoxHelper( engineRight.getObjectByName('propLMesh'), 0xffff00 );
     scene.add(box);
     scene.add( axesHelper );
 }
-
-
 
 // ==========================================
 // MOVEMENT HANDLER
@@ -167,6 +173,8 @@ function handleMovement() {
     globalDropshipMovement.translateZ(horizontalSpeed / 1000);
     globalDropshipMovement.rotateY(turningSpeed / 1000);
     globalDropshipMovement.translateY(verticalSpeed / 1000);
+    bladesLeft.rotateY(0.9);
+    bladesRight.rotateY(-0.9);
 
     let objects = [];
     objects.push(terrain);
@@ -220,7 +228,7 @@ function handleRotationVisuals() {
     }
 
     // Negative due to anti-clockwise positive rotation in WebGL
-    propellerCasings.rotation.z = (cumulativeForwardIndicator >= 0) ? -(maxPropsPitchDown * cumulativeForwardIndicator) : -(maxPropsPitchUp * cumulativeForwardIndicator);
+    engines.rotation.z = (cumulativeForwardIndicator >= 0) ? -(maxPropsPitchDown * cumulativeForwardIndicator) : -(maxPropsPitchUp * cumulativeForwardIndicator);
     pitchDropshipMovement.rotation.z = (cumulativeForwardIndicator >= 0) ? -(maxAirframePitchDown * cumulativeForwardIndicator) : -(maxAirframePitchUp * cumulativeForwardIndicator);
 
     if (accelerating.turnLeft) {
@@ -232,11 +240,11 @@ function handleRotationVisuals() {
     }
 
     if (cumulativeTurningIndicator >= 0) {
-        propellerCasingLeft.rotation.z = -maxIndividualPropTiltBackward * cumulativeTurningIndicator;
-        propellerCasingRight.rotation.z = maxIndividualPropTiltForward * cumulativeTurningIndicator;
+        engineRight.rotation.z = -maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        engineLeft.rotation.z = maxIndividualPropTiltForward * cumulativeTurningIndicator;
     } else {
-        propellerCasingRight.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
-        propellerCasingLeft.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
+        engineLeft.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        engineRight.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
     }
 
     airframe.rotation.x = - (cumulativeTurningIndicator * maxAirframeTilt);
@@ -270,6 +278,7 @@ function animate() {
     handleRotationVisuals();
     updateCameras();
 
+    controls.update();
 	renderer.render( scene, currentCamera );
 }
 
@@ -320,7 +329,7 @@ function createMenu() {
 setLights(scene);
 terrain = setupTerrain(scene, terrain);
 addHelpers();
-loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, propellerCasings,
-    propellerCasingLeft, propellerCasingRight);
+loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, engines,
+    engineRight, engineLeft, bladesLeft, bladesRight);
 loadControls();
 //createMenu();
