@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { chaseCamera, topViewCamera, sideViewCamera, debugCamera } from './main.js'
+import { chaseCamera, topViewCamera, sideViewCamera, debugCamera, fpvCamera, frontViewCamera } from './main.js'
 
 export var currentCamera;
 
@@ -19,6 +19,8 @@ const numOne = 49;
 const numTwo = 50;
 const numThree = 51;
 const numFour = 52;
+const numFive = 53;
+const numSix = 54;
 const numNine = 57;
 
 const keyState = {
@@ -94,10 +96,16 @@ export function loadControls() {
                 currentCamera = chaseCamera;
                 break;
             case numThree:
-                currentCamera = topViewCamera;
+                currentCamera = sideViewCamera;
                 break;
             case numFour:
-                currentCamera = sideViewCamera;
+                currentCamera = topViewCamera;
+                break;
+            case numFive:
+                currentCamera = frontViewCamera;
+                break;
+            case numSix:
+                currentCamera = fpvCamera;
                 break;
             case numNine:
                 currentCamera = debugCamera;
