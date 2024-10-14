@@ -25,7 +25,7 @@ const clock = new THREE.Clock();
 export const chaseCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
 export const topViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
 export const sideViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
-export const fpvCamera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.1, 5000  );
+export const fpvCamera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 5000  );
 export const debugCamera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
 export const frontViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
 
@@ -223,13 +223,13 @@ var cumulativeTurningIndicator = 0.0;
 var cumulativeVerticalIndicator = 0.0;
 
 const maxAirframePitchDown = Math.PI / 10;
-const maxPropsPitchDown = Math.PI / 8;
+const maxPropsPitchDown = Math.PI / 12;
 const maxBladePitch = Math.PI / 8;
 
 const maxAirframePitchUp = Math.PI / 12;
 const maxPropsPitchUp = Math.PI / 10;
 
-const maxIndividualPropTiltForward = Math.PI / 10;
+const maxIndividualPropTiltForward = Math.PI / 16;
 const maxIndividualPropTiltBackward = Math.PI / 24;
 const maxAirframeTilt = Math.PI / 20;
 
@@ -254,11 +254,12 @@ function handleRotationVisuals() {
         cumulativeTurningIndicator -= cumulativeTurningIndicator * step * 2;
     }
 
+    
     if (cumulativeTurningIndicator >= 0) {
-        engineRight.rotation.z = -maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        engineRight.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
         engineLeft.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
     } else {
-        engineLeft.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        engineLeft.rotation.z = -maxIndividualPropTiltBackward * cumulativeTurningIndicator;
         engineRight.rotation.z = maxIndividualPropTiltForward * cumulativeTurningIndicator;
     }
 
@@ -282,16 +283,19 @@ function handleRotationVisuals() {
         cumulativeVerticalIndicator -= step * cumulativeVerticalIndicator * 2;
     }
 
-    bladesRight.getObjectByName('b1').rotation.z = (cumulativeVerticalIndicator * maxBladePitch);
-    bladesRight.getObjectByName('b2').rotation.z = (cumulativeVerticalIndicator * maxBladePitch);
-    bladesRight.getObjectByName('b3').rotation.z = (cumulativeVerticalIndicator * maxBladePitch);
+    var rightBladesPitch = (cumulativeTurningIndicator == 0) ? (cumulativeVerticalIndicator * maxBladePitch) : ((cumulativeVerticalIndicator + cumulativeTurningIndicator) / 2 * maxBladePitch);
+    var leftBladePitch = (cumulativeTurningIndicator == 0) ? (cumulativeVerticalIndicator * maxBladePitch) : ((cumulativeVerticalIndicator - cumulativeTurningIndicator) / 2 * maxBladePitch);
 
-    bladesLeft.getObjectByName('b1').rotation.z = -(cumulativeVerticalIndicator * maxBladePitch);
-    bladesLeft.getObjectByName('b2').rotation.z = -(cumulativeVerticalIndicator * maxBladePitch);
-    bladesLeft.getObjectByName('b3').rotation.z = -(cumulativeVerticalIndicator * maxBladePitch);
+    bladesRight.getObjectByName('b1').rotation.z = (rightBladesPitch);
+    bladesRight.getObjectByName('b2').rotation.z = (rightBladesPitch);
+    bladesRight.getObjectByName('b3').rotation.z = (rightBladesPitch);
 
-    bladesLeft.rotateY(-2.887);
-    bladesRight.rotateY(2.887);
+    bladesLeft.getObjectByName('b1').rotation.z = -(leftBladePitch);
+    bladesLeft.getObjectByName('b2').rotation.z = -(leftBladePitch);
+    bladesLeft.getObjectByName('b3').rotation.z = -(leftBladePitch);
+
+    bladesLeft.rotateY(-2.883);
+    bladesRight.rotateY(2.883);
 }
 
 function addBaseMovement() {
@@ -300,6 +304,15 @@ function addBaseMovement() {
     airframe.position.set(Math.sin(delta) * 0.01, Math.cos(delta) * 0.3, Math.sin(delta * 0.8) * 0.1);
     airframe.rotation.x += Math.sin(delta) * 0.01;
     airframe.rotation.y = Math.cos(delta * 0.3) * 0.01;
+    airframe.rotation.z = Math.cos(delta * 0.5) * 0.01;
+
+    engineLeft.translateX(Math.sin(delta*10)*0.0015);
+    engineLeft.translateZ(Math.sin(delta*10)*0.001);
+    engineLeft.translateY(Math.cos(delta*10) * 0.0008)
+
+    engineRight.translateX(Math.sin(delta*10)*0.0015);
+    engineRight.translateZ(Math.sin(delta*10)*0.001);
+    engineRight.translateY(Math.cos(delta*10) * 0.0008)
 }
 
 // ==========================================

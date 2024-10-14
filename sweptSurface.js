@@ -2,18 +2,18 @@ import * as THREE from 'three';
 
 export function createBladeGeometry() {
     const shape = new THREE.Shape();
-    shape.moveTo(-0.1, 0); // Adjusted width for blade
-    shape.lineTo(0.06, 0);
-    shape.lineTo(0.07, 0.1); // Height of the blade
-    shape.lineTo(-0.07, 0.4);
-    shape.lineTo(-0.1, 0); // Close the shape
+    shape.moveTo(-0.1, -0.2); // Adjusted y to center the shape
+    shape.lineTo(0.06, -0.2);
+    shape.lineTo(0.035, -0.1);
+    shape.lineTo(-0.02, 0.2); 
+    shape.lineTo(-0.1, -0.2); // Close the shape
 
 
     const bladeCurve = new THREE.CubicBezierCurve3(
-        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 0.1),
         new THREE.Vector3(0, 0, 1),
-        new THREE.Vector3(0, 0, 2),
-        new THREE.Vector3(0.01, 0, 6.6)
+        new THREE.Vector3(0, 0, 4),
+        new THREE.Vector3(0.1, -0.08, 7.4)
     );
 
     const points = bladeCurve.getPoints(30); 

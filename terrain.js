@@ -34,7 +34,7 @@ export function setupTerrain(scene) {
 function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
     const segmentsX = width / segmentWidth;
     const segmentsZ = length / segmentLength;
-    noise.seed(1111); // ?
+    noise.seed(119); // ?
 
     const verticesCount = (segmentsX + 1) * (segmentsZ + 1);
     const vertices = new Float32Array(verticesCount * 3); // 3 values (x, y, z) per vertex

@@ -165,10 +165,8 @@ function addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight) {
     leftBlade3.rotation.y = -2.0944;
     bladesLeft.add(leftBlade3);
 
-    bladesRight.position.set(0, 1.5, 0.3);
-    bladesLeft.position.set(0, 1.5, -0.4);
-
-    bladesLeft.rotation.y = 1;
+    bladesRight.position.set(0, 1.48, 0.4);
+    bladesLeft.position.set(0, 1.48, -0.4);
 
 
     engineLeft.add(bladesLeft);
