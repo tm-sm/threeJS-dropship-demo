@@ -294,8 +294,9 @@ function handleRotationVisuals() {
     bladesLeft.getObjectByName('b2').rotation.z = -(leftBladePitch);
     bladesLeft.getObjectByName('b3').rotation.z = -(leftBladePitch);
 
-    bladesLeft.rotateY(-2.883);
-    bladesRight.rotateY(2.883);
+    const rotationSpeed = 2.883; //magic number
+    bladesLeft.rotateY(-rotationSpeed);
+    bladesRight.rotateY(rotationSpeed);
 }
 
 function addBaseMovement() {
