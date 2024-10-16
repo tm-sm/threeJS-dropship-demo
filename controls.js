@@ -15,6 +15,7 @@ const zKey = 90;
 const xKey = 88;
 const qKey = 81;
 const eKey = 69;
+const iKey = 73;
 const numOne = 49;
 const numTwo = 50;
 const numThree = 51;
@@ -32,10 +33,11 @@ const keyState = {
     x: false,
     q: false,
     e: false,
+    i: false,
 };
 
 
-export var accelerating = {
+export var input = {
     forward: false,
     backward: false,
     right: false,
@@ -44,6 +46,7 @@ export var accelerating = {
     turnLeft: false,
     up: false,
     down: false,
+    toggleEngine: false,
 };
 
 export function loadControls() {
@@ -52,43 +55,47 @@ export function loadControls() {
         switch (e.keyCode) {
             case wKey:
                 keyState.w = true;
-                accelerating.forward = true;
-                accelerating.backward = false;
+                input.forward = true;
+                input.backward = false;
                 break;
             case sKey:
                 keyState.s = true;
-                accelerating.backward = true;
-                accelerating.forward = false;
+                input.backward = true;
+                input.forward = false;
                 break;
             case aKey:
                 keyState.a = true;
-                accelerating.left = true;
-                accelerating.right = false;
+                input.left = true;
+                input.right = false;
                 break;
             case dKey:
                 keyState.d = true;
-                accelerating.right = true;
-                accelerating.left = false;
+                input.right = true;
+                input.left = false;
                 break;
             case zKey:
                 keyState.z = true;
-                accelerating.turnLeft = true;
-                accelerating.turnRight = false;
+                input.turnLeft = true;
+                input.turnRight = false;
                 break;
             case xKey:
                 keyState.x = true;
-                accelerating.turnRight = true;
-                accelerating.turnLeft = false;
+                input.turnRight = true;
+                input.turnLeft = false;
                 break;
             case qKey:
                 keyState.q = true;
-                accelerating.up = true;
-                accelerating.down = false;
+                input.up = true;
+                input.down = false;
                 break;
             case eKey:
                 keyState.e = true;
-                accelerating.down = true;
-                accelerating.up = false;
+                input.down = true;
+                input.up = false;
+                break;
+            case iKey:
+                keyState.i = true;
+                input.toggleEngine = !input.toggleEngine;
                 break;
             case numOne:
                 break;
@@ -119,35 +126,38 @@ export function loadControls() {
         switch (e.keyCode) {
             case wKey:
                 keyState.w = false;
-                accelerating.forward = false;
+                input.forward = false;
                 break;
             case sKey:
                 keyState.s = false;
-                accelerating.backward = false;
+                input.backward = false;
                 break;
             case aKey:
                 keyState.a = false;
-                accelerating.left = false;
+                input.left = false;
                 break;
             case dKey:
                 keyState.d = false;
-                accelerating.right = false;
+                input.right = false;
                 break;
              case zKey:
                 keyState.z = false;
-                accelerating.turnLeft = false;
+                input.turnLeft = false;
                 break;
             case xKey:
                 keyState.x = false;
-                accelerating.turnRight = false;
+                input.turnRight = false;
                 break;
             case qKey:
                 keyState.q = false;
-                accelerating.up = false;
+                input.up = false;
                 break;
             case eKey:
                 keyState.e = false;
-                accelerating.down = false;
+                input.down = false;
+                break;
+            case iKey:
+                keyState.i = false;
                 break;
             default:
                 break;
@@ -155,13 +165,13 @@ export function loadControls() {
     
         // Stop movement/turning when no keys are pressed
         if (!keyState.w && !keyState.s) {
-            accelerating.forward = false;
-            accelerating.backward = false;
+            input.forward = false;
+            input.backward = false;
         }
     
         if (!keyState.a && !keyState.d) {
-            accelerating.turnLeft = false;
-            accelerating.turnRight = false;
+            input.turnLeft = false;
+            input.turnRight = false;
         }
     });
 }
