@@ -15,10 +15,10 @@ export function setupTerrain(scene) {
 
     geometry.computeVertexNormals();
 
-    const material = new THREE.MeshStandardMaterial({ 
-        color: new THREE.Color(0x7D6741),
-        roughness: 1.0,
-        metalness: 0.3,
+    const material = new THREE.MeshPhongMaterial({ 
+        color: 0x7D6741,
+        roughness: 0.8,
+        metalness: 0.0,
         side: THREE.DoubleSide,
     }); 
 
@@ -26,7 +26,7 @@ export function setupTerrain(scene) {
     terrain.castShadow = true;
     terrain.receiveShadow = true;
     scene.add(terrain);
-    scene.background = new THREE.Color(0xbbbbff)
+    scene.background = new THREE.Color(0x82c8e5)
 
     return terrain;
 }

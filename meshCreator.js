@@ -2,9 +2,10 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createSweptMesh } from './sweptSurface.js';
 
-const dropshipMaterial = new THREE.MeshStandardMaterial({color: 0x001100,
-    roughness: 0.7,
-    metalness: 0.4,
+const dropshipMaterial = new THREE.MeshStandardMaterial({color: 0xbbbbbb,
+    roughness: .2,
+    metalness: 1.0,
+    emissive: 0x111111
 });
 
 
@@ -26,12 +27,13 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
 
     loader.load( 'public/models/dropship/cockpit.glb', function ( gltf ) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshStandardMaterial({color: 0x999999,
+        var modelMaterial = new THREE.MeshLambertMaterial({color: 0x999999,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.1,
         emissive: 0xea6d1a,
         roughness: 0.0,
-        metalness: 0.3});
+        metalness: 0.6,
+        side: THREE.DoubleSide});
         model.traverse((o) => {
             if (o.isMesh) o.material = modelMaterial;
         });
@@ -197,10 +199,6 @@ function addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight) {
     leftBlade1.name = 'b1';
     leftBlade2.name = 'b2';
     leftBlade3.name = 'b3';
-
-    leftBlade1.scale.set(-1, 1, 1);
-    leftBlade2.scale.set(-1, 1, 1);
-    leftBlade3.scale.set(-1, 1, 1);
 
     const lBladesSlow = new THREE.Group();
 

@@ -22,12 +22,12 @@ const renderer = new THREE.WebGLRenderer();
 const clock = new THREE.Clock();
 
 
-export const chaseCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
-export const topViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
-export const sideViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
-export const fpvCamera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 5000  );
-export const debugCamera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-export const frontViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
+export const chaseCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 20000 );
+export const topViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 20000 );
+export const sideViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 20000 );
+export const fpvCamera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 20000  );
+export const debugCamera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 20000 );
+export const frontViewCamera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 20000 );
 
 const controls = new OrbitControls( debugCamera, renderer.domElement );
 
@@ -41,8 +41,8 @@ topViewCamera.position.x = -1;
 
 sideViewCamera.position.z = 20;
 
-fpvCamera.position.x = 2.7;
-fpvCamera.position.y = 0.2;
+fpvCamera.position.x = 2.4;
+fpvCamera.position.y = 0.;
 fpvCamera.rotation.y = -Math.PI / 2;
 
 frontViewCamera.position.x = 15;
@@ -201,7 +201,7 @@ function handleMovement() {
         const distanceToGround = intersects[0].distance;
         movement.height = distanceToGround;
         if (distanceToGround < 4) {
-            globalDropshipMovement.translateY(0.1);
+            globalDropshipMovement.translateY(4 - distanceToGround);    
         }
     }
 

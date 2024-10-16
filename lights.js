@@ -3,11 +3,13 @@ import * as THREE from 'three';
 
 // Set up lighting
 export function setLights(scene) {
-    const ambientLight = new THREE.AmbientLight(0xffffff, .8);
+    const ambientLight = new THREE.AmbientLight(0x333333, 1.5);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xcccccc, 5.0);
-    directionalLight.position.set(100, 100, 0);
+    const sunCoords = new THREE.Vector3(10000, 1000, 200);
+
+    const directionalLight = new THREE.DirectionalLight(0xfdfbd3, 2.5);
+    directionalLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
     directionalLight.lookAt(0, 0, 0);
     directionalLight.castShadow = true;
 
@@ -22,7 +24,15 @@ export function setLights(scene) {
     directionalLight.shadow.camera.bottom = -500;
 
     scene.add(directionalLight);
+    const sunGeometry = new THREE.SphereGeometry(300, 30, 16); // Adjust the radius and segment values
+    const sunMaterial = new THREE.MeshPhongMaterial({ color: 0xd6902e,
+        emissive: 0xffffff,
+     });
+    const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+    
+    sun.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
+    scene.add(sun);
 
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, .5); // Adjusted intensity
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.5); // Adjusted intensity
     scene.add(hemisphereLight);
 }
