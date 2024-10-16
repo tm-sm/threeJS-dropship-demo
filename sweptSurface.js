@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
-export function createBladeGeometry() {
+
+export function createBladesSlow() {
     const shape = new THREE.Shape();
     shape.moveTo(-0.1, -0.2); // Adjusted y to center the shape
     shape.lineTo(0.0, -0.3);
@@ -29,6 +30,15 @@ export function createBladeGeometry() {
         extrudePath: curvePath 
     };
 
+    let material = new THREE.MeshStandardMaterial({ color: 0x001100 });
+
+    return createSweptMesh(shape, curvePath, extrudeSettings, material)
+
+}
+
+
+export function createSweptMesh(shape, curvePath, extrudeSettings, material) {
+
     const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    return geometry;
+    return new THREE.Mesh(geometry, material);
 }

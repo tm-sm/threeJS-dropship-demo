@@ -9,7 +9,7 @@ import { setupTerrain } from './terrain.js'
 import { accelerating } from './controls.js'
 import { loadControls } from './controls.js'
 import { loadExternalModels } from './meshCreator.js';
-import { createBladeGeometry } from './sweptSurface.js';
+import { createSweptMesh } from './sweptSurface.js';
 
 import { currentCamera } from './controls.js'
 

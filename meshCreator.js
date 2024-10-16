@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { createBladeGeometry } from './sweptSurface.js';
+import { createBladesSlow } from './sweptSurface.js';
 
 export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, engines,
      engineLeft, engineRight, bladesLeft, bladesRight) {
@@ -130,12 +130,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
 }
 
 function addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight) {
-    const g = createBladeGeometry();
-    let material = new THREE.MeshStandardMaterial({ color: 0x001100 });
     
-    const rightBlade1 = new THREE.Mesh(g, material);
-    const rightBlade2 = new THREE.Mesh(g, material);
-    const rightBlade3 = new THREE.Mesh(g, material);
+    const rightBlade1 = createBladesSlow();
+    const rightBlade2 = createBladesSlow();
+    const rightBlade3 = createBladesSlow();
 
     rightBlade1.name = 'b1';
     rightBlade2.name = 'b2';
@@ -151,9 +149,9 @@ function addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight) {
     rightBlade3.rotation.y = -2.0944;
     bladesRight.add(rightBlade3);
 
-    const leftBlade1 = new THREE.Mesh(g, material);
-    const leftBlade2 = new THREE.Mesh(g, material);
-    const leftBlade3 = new THREE.Mesh(g, material);
+    const leftBlade1 = createBladesSlow();
+    const leftBlade2 = createBladesSlow();
+    const leftBlade3 = createBladesSlow();
 
     leftBlade1.name = 'b1';
     leftBlade2.name = 'b2';
