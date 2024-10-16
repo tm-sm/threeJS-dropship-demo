@@ -201,7 +201,7 @@ function handleMovement() {
         const distanceToGround = intersects[0].distance;
         movement.height = distanceToGround;
         if (distanceToGround < 4) {
-            globalDropshipMovement.translateY(4 - distanceToGround);    
+            globalDropshipMovement.translateY(4 - distanceToGround);
         }
     }
 
@@ -297,10 +297,12 @@ function handleRotationVisuals() {
 
 function addBaseMovement(delta) {
     if (isEnginePowered) {
-        airframe.position.set(Math.sin(delta) * 0.01, Math.cos(delta) * 0.3, Math.sin(delta * 0.8) * 0.1);
+        airframe.translateX(Math.sin(delta) * 0.003);
+        airframe.translateY(Math.cos(delta) * 0.002);
+        airframe.translateZ(Math.sin(delta) * 0.0024);
         airframe.rotation.x += Math.sin(delta) * 0.01;
-        airframe.rotation.y = Math.cos(delta * 0.3) * 0.01;
-        airframe.rotation.z = Math.cos(delta * 0.5) * 0.01;
+        airframe.rotation.y += Math.cos(delta * 0.9) * 0.00001;
+        airframe.rotation.z += Math.cos(delta * 0.8) * 0.0001;
     }
 }
 
@@ -310,8 +312,8 @@ var isEnginePowered = false;
 
 function motorHandler(delta) {
 
-    cumulativeLeftEnginePower = (input.toggleEngine) ? Math.min(cumulativeLeftEnginePower + 0.001, 1) : Math.max(cumulativeLeftEnginePower - 0.0005, 0);
-    cumulativeRightEnginePower = (input.toggleEngine && cumulativeLeftEnginePower > 0.2) ? Math.min(cumulativeRightEnginePower + 0.001, 1) : Math.max(cumulativeRightEnginePower - 0.0005, 0);
+    cumulativeLeftEnginePower = (input.toggleEngine) ? Math.min(cumulativeLeftEnginePower + 0.001, 1) : Math.max(cumulativeLeftEnginePower - 0.001 * (cumulativeLeftEnginePower + 0.02), 0);
+    cumulativeRightEnginePower = (input.toggleEngine && cumulativeLeftEnginePower > 0.2) ? Math.min(cumulativeRightEnginePower + 0.001, 1) : Math.max(cumulativeRightEnginePower - 0.001 * (cumulativeRightEnginePower + 0.02), 0);
 
     isEnginePowered = (cumulativeLeftEnginePower > 0.9 && cumulativeRightEnginePower > 0.9);
 

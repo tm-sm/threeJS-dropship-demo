@@ -282,7 +282,7 @@ function createBladesFast() {
     const radius = 6.6;
     const radialSegments = 8;
     const thetaStart = 0;
-    const thetaLength = Math.PI / 4;
+    const thetaLength = Math.PI / 6;
 
     const geometry = new THREE.CylinderGeometry(
         radius,   
