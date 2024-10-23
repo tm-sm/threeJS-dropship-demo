@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { noise } from './libs/noisejs/perlin.js'
 
 export function setupTerrain(scene) {
-    const segmentWidth = 100;
-    const segmentLength = 100;
-    const width = 5000;
-    const length = 5000;
+    const segmentWidth = 64;
+    const segmentLength = 64;
+    const width = 5120;
+    const length = 5120;
     
     const { vertices, indices } = setVerticesAndIndices(segmentWidth, segmentLength, width, length);
     
@@ -51,9 +51,9 @@ function setVerticesAndIndices(segmentWidth, segmentLength, width, length) {
         for (let j = 0; j <= segmentsZ; j++) {
             let x = offsetX + i * segmentWidth;
             let z = offsetZ + j * segmentLength;
-            vertices[vertIndex++] = x - 10 * (noise.simplex2(x, z));
-            vertices[vertIndex++] = ((noise.simplex2(x, z) + 1) / 2) * 60;
-            vertices[vertIndex++] = z + (noise.simplex2(x, z));
+            vertices[vertIndex++] = x;
+            vertices[vertIndex++] = ((noise.simplex2(x, z))) * ((x + z) / 50) * Math.sin(x * Math.cos(z));
+            vertices[vertIndex++] = z;
         }
     }
 

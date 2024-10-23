@@ -6,36 +6,26 @@ export var currentCamera;
 // ==========================================
 // INPUT HANDLERS
 // ==========================================
-
-const wKey = 87;
-const sKey = 83;
-const aKey = 65;
-const dKey = 68;
-const zKey = 90;
-const xKey = 88;
-const qKey = 81;
-const eKey = 69;
-const iKey = 73;
-const numOne = 49;
-const numTwo = 50;
-const numThree = 51;
-const numFour = 52;
-const numFive = 53;
-const numSix = 54;
-const numNine = 57;
-
-const keyState = {
-    w: false,
-    s: false,
-    a: false,
-    d: false,
-    z: false,
-    x: false,
-    q: false,
-    e: false,
-    i: false,
+const keyMap = {
+    87: { key: 'w', input: 'forward', state: true },  // W key
+    83: { key: 's', input: 'backward', state: true },  // S key
+    65: { key: 'a', input: 'turnLeft', state: true },  // A key
+    68: { key: 'd', input: 'turnRight', state: true }, // D key
+    90: { key: 'z', input: 'left', state: true },      // Z key
+    88: { key: 'x', input: 'right', state: true },     // X key
+    81: { key: 'q', input: 'up', state: true },        // Q key
+    69: { key: 'e', input: 'down', state: true },      // E key
+    73: { key: 'i', input: 'toggleEngine', toggle: true }, // I key
+    80: { key: 'p', input: 'toggleRamp', toggle: true }, // P key
+    72: { key: 'h', input: 'toggleBladeExtension', toggle: true }, // H key
+    49: { action: () => {} },                         // Camera (Num 1)
+    50: { action: () => currentCamera = chaseCamera },  // Num 2
+    51: { action: () => currentCamera = sideViewCamera }, // Num 3
+    52: { action: () => currentCamera = topViewCamera },  // Num 4
+    53: { action: () => currentCamera = frontViewCamera }, // Num 5
+    54: { action: () => currentCamera = fpvCamera },    // Num 6
+    57: { action: () => currentCamera = debugCamera },  // Num 9
 };
-
 
 export var input = {
     forward: false,
@@ -47,131 +37,43 @@ export var input = {
     up: false,
     down: false,
     toggleEngine: false,
+    toggleRamp: false,
+    toggleBladeExtension: false,
 };
+
+function handleKeyEvent(e, isKeyDown) {
+    const mapping = keyMap[e.keyCode];
+    if (mapping) {
+        if (mapping.action) {
+            mapping.action();
+        } else if (mapping.toggle) {
+            if (isKeyDown) {
+                input[mapping.input] = !input[mapping.input];
+            }
+        } else {
+            input[mapping.input] = isKeyDown;
+        }
+    }
+
+    // Reset when keys are released
+    if (!isKeyDown) {
+        if (!input.forward && !input.backward) {
+            input.forward = input.backward = false;
+        }
+        if (!input.turnLeft && !input.turnRight) {
+            input.turnLeft = input.turnRight = false;
+        }
+        if (!input.left && !input.right) {
+            input.left = input.right = false;
+        }
+        if (!input.up && !input.down) {
+            input.up = input.down = false;
+        }
+    }
+}
 
 export function loadControls() {
     currentCamera = chaseCamera;
-    document.addEventListener('keydown', (e) => {
-        switch (e.keyCode) {
-            case wKey:
-                keyState.w = true;
-                input.forward = true;
-                input.backward = false;
-                break;
-            case sKey:
-                keyState.s = true;
-                input.backward = true;
-                input.forward = false;
-                break;
-            case aKey:
-                keyState.a = true;
-                input.left = true;
-                input.right = false;
-                break;
-            case dKey:
-                keyState.d = true;
-                input.right = true;
-                input.left = false;
-                break;
-            case zKey:
-                keyState.z = true;
-                input.turnLeft = true;
-                input.turnRight = false;
-                break;
-            case xKey:
-                keyState.x = true;
-                input.turnRight = true;
-                input.turnLeft = false;
-                break;
-            case qKey:
-                keyState.q = true;
-                input.up = true;
-                input.down = false;
-                break;
-            case eKey:
-                keyState.e = true;
-                input.down = true;
-                input.up = false;
-                break;
-            case iKey:
-                keyState.i = true;
-                input.toggleEngine = !input.toggleEngine;
-                break;
-            case numOne:
-                break;
-            case numTwo:
-                currentCamera = chaseCamera;
-                break;
-            case numThree:
-                currentCamera = sideViewCamera;
-                break;
-            case numFour:
-                currentCamera = topViewCamera;
-                break;
-            case numFive:
-                currentCamera = frontViewCamera;
-                break;
-            case numSix:
-                currentCamera = fpvCamera;
-                break;
-            case numNine:
-                currentCamera = debugCamera;
-                break;
-            default:
-                break;
-        }
-    });
-    
-    document.addEventListener('keyup', (e) => {
-        switch (e.keyCode) {
-            case wKey:
-                keyState.w = false;
-                input.forward = false;
-                break;
-            case sKey:
-                keyState.s = false;
-                input.backward = false;
-                break;
-            case aKey:
-                keyState.a = false;
-                input.left = false;
-                break;
-            case dKey:
-                keyState.d = false;
-                input.right = false;
-                break;
-             case zKey:
-                keyState.z = false;
-                input.turnLeft = false;
-                break;
-            case xKey:
-                keyState.x = false;
-                input.turnRight = false;
-                break;
-            case qKey:
-                keyState.q = false;
-                input.up = false;
-                break;
-            case eKey:
-                keyState.e = false;
-                input.down = false;
-                break;
-            case iKey:
-                keyState.i = false;
-                break;
-            default:
-                break;
-        }
-    
-        // Stop movement/turning when no keys are pressed
-        if (!keyState.w && !keyState.s) {
-            input.forward = false;
-            input.backward = false;
-        }
-    
-        if (!keyState.a && !keyState.d) {
-            input.turnLeft = false;
-            input.turnRight = false;
-        }
-    });
+    document.addEventListener('keydown', (e) => handleKeyEvent(e, true));
+    document.addEventListener('keyup', (e) => handleKeyEvent(e, false));
 }

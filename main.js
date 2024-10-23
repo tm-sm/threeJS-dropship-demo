@@ -273,7 +273,7 @@ function handleRotationVisuals() {
         cumulativeHorizontalIndicator -= step * cumulativeHorizontalIndicator * 1.3;
     }
 
-    airframe.rotation.x += cumulativeHorizontalIndicator * maxAirframeTilt;
+    airframe.rotation.x += cumulativeHorizontalIndicator * maxAirframeTilt * 1.5;
 
     if (input.up) {
         cumulativeVerticalIndicator = Math.min(cumulativeVerticalIndicator + step, 1);
@@ -309,11 +309,14 @@ function addBaseMovement(delta) {
 var cumulativeLeftEnginePower = 0.0;
 var cumulativeRightEnginePower = 0.0;
 var isEnginePowered = false;
+var areBladesMoving = false;
 
 function motorHandler(delta) {
 
-    cumulativeLeftEnginePower = (input.toggleEngine) ? Math.min(cumulativeLeftEnginePower + 0.001, 1) : Math.max(cumulativeLeftEnginePower - 0.001 * (cumulativeLeftEnginePower + 0.02), 0);
-    cumulativeRightEnginePower = (input.toggleEngine && cumulativeLeftEnginePower > 0.2) ? Math.min(cumulativeRightEnginePower + 0.001, 1) : Math.max(cumulativeRightEnginePower - 0.001 * (cumulativeRightEnginePower + 0.02), 0);
+
+    // A lot of magic numbers
+    cumulativeLeftEnginePower = (input.toggleEngine && engineAllowed) ? Math.min(cumulativeLeftEnginePower + 0.001, 1) : Math.max(cumulativeLeftEnginePower - 0.001 * (cumulativeLeftEnginePower + 0.02), 0);
+    cumulativeRightEnginePower = (input.toggleEngine && cumulativeLeftEnginePower > 0.2 && engineAllowed) ? Math.min(cumulativeRightEnginePower + 0.001, 1) : Math.max(cumulativeRightEnginePower - 0.001 * (cumulativeRightEnginePower + 0.02), 0);
 
     isEnginePowered = (cumulativeLeftEnginePower > 0.9 && cumulativeRightEnginePower > 0.9);
 
@@ -343,6 +346,10 @@ function motorHandler(delta) {
         bladesRight.rotateY(-2 * 0.6);
     }
 
+    if (cumulativeLeftEnginePower > 0 || cumulativeRightEnginePower > 0) {
+
+    }
+
 
 
     engineLeft.translateX((Math.sin(delta*10)*0.0015) * cumulativeLeftEnginePower); 
@@ -352,9 +359,78 @@ function motorHandler(delta) {
     engineRight.translateX((Math.sin(delta*10)*0.0015) * cumulativeRightEnginePower);
     engineRight.translateZ((Math.sin(delta*10)*0.001) * cumulativeRightEnginePower);
     engineRight.translateY((Math.cos(delta*10) * 0.0008) * cumulativeRightEnginePower)
+}
 
+var cumulativeRampExtension = 0.0;
+const maxRampExtension = Math.PI / 4;
+
+function rampHandler(delta) {
+    cumulativeRampExtension = input.toggleRamp ? Math.min(cumulativeRampExtension + 0.02, 1) : Math.max(cumulativeRampExtension - 0.02, 0);
+
+    ramp.rotation.z = cumulativeRampExtension * maxRampExtension;
+}
+
+var cumulativeBladeFold = 1.0;
+var cumulativeEngineFold = 1.0;
+var cumulativeWingFold = 1.0;
+
+var bladesInPosition = true;
+
+input.toggleBladeExtension = true;
+
+var engineAllowed = false;
+
+function bladeFoldHandler(delta) {
+    if (input.toggleEngine) {
+        input.toggleBladeExtension = false;
+    }
+
+
+    if (input.toggleBladeExtension) {
+        bladesLeft.rotation.set(0, 0, 0);
+        bladesRight.rotation.set(0, Math.PI, 0);
+
+        bladesInPosition = true;
+        cumulativeLeftEnginePower = 0;
+        cumulativeRightEnginePower = 0;
+
+    } else {
+        bladesInPosition = false;
+    }
+
+    if (cumulativeEngineFold == 0 && cumulativeWingFold == 0) {
+        cumulativeBladeFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeBladeFold + 0.01, 1) : Math.max(cumulativeBladeFold - 0.01, 0);
+    }
+
+    if (cumulativeBladeFold == 1 && cumulativeEngineFold == 0) {
+        cumulativeWingFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeWingFold + 0.01, 1) : Math.max(cumulativeWingFold - 0.01, 0);
+    }
+    
+    if (cumulativeWingFold == 1) {
+        cumulativeEngineFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeEngineFold + 0.01, 1) : Math.max(cumulativeEngineFold - 0.01, 0);
+    }
+   
+    if (cumulativeBladeFold == 0) {
+        engineAllowed = true;
+    } else {
+        engineAllowed = false;
+    }
+
+    console.log(cumulativeBladeFold);
+    bladesLeft.getObjectByName('b2').rotation.set(0, 2.0944 - (cumulativeBladeFold * (Math.PI / 1.7)), 0);
+    bladesLeft.getObjectByName('b3').rotation.set(0, -2.0944 + (cumulativeBladeFold * (Math.PI / 1.7)), 0);
+
+    bladesRight.getObjectByName('b2').rotation.set(0, 2.0944 - (cumulativeBladeFold * (Math.PI / 1.7)), 0);
+    bladesRight.getObjectByName('b3').rotation.set(0, -2.0944 + (cumulativeBladeFold * (Math.PI / 1.7 )), 0);
+
+    wings.rotation.set(0, Math.PI / 3 * cumulativeWingFold, 0);
+    wings.position.y = 0.1 * cumulativeWingFold;
+
+    engineLeft.rotation.set(0, 0, -cumulativeEngineFold * (Math.PI / 2));
+    engineRight.rotation.set(0, 0, cumulativeEngineFold * (Math.PI / 2));
 
 }
+
 
 // ==========================================
 // CAMERA HANDLERS
@@ -376,6 +452,8 @@ function animate() {
     addBaseMovement(delta);
     updateCameras(delta);
     motorHandler(delta);
+    rampHandler(delta);
+    bladeFoldHandler(delta);
 
     controls.update();
 	renderer.render( scene, currentCamera );

@@ -20,6 +20,7 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
             if (o.isMesh) o.material = modelMaterial;
         });
         gltf.scene.name = 'aiframeMesh';
+        gltf.scene.side = THREE.DoubleSide;
         airframe.add(gltf.scene);
     }, undefined, function ( error ) {
         console.error( error );
@@ -50,7 +51,9 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
             if (o.isMesh) o.material = modelMaterial;
         });
         gltf.scene.name = 'wingsMesh';
+        wings.position.x = -1;
         wings.add(gltf.scene);
+        gltf.scene.position.x = 1;
     }, undefined, function ( error ) {
         console.error( error );
     });
@@ -62,6 +65,9 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
             if (o.isMesh) o.material = modelMaterial;
         });
         gltf.scene.name = 'rampMesh';
+        ramp.position.set(-2.28, -0.58, 0);
+        gltf.scene.position.set(2.28, 0.58, 0);
+        gltf.scene.side = THREE.DoubleSide;
         ramp.add(gltf.scene);
     }, undefined, function ( error ) {
         console.error( error );
@@ -123,17 +129,18 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
 
     addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight);
 
+
     engineRight.position.z = 6.3;
     engineLeft.position.z = -6.3;
 
     engines.add(engineLeft);
     engines.add(engineRight);
-    engines.position.x = -1.48602;
+    engines.position.x = -0.48602;
     engines.position.y = 0.598318;
 
+    wings.add(engines);
     airframe.add(wings);
     airframe.add(ramp);
-    airframe.add(engines);
     airframe.add(cockpit);
 
     pitchDropshipMovement.add(airframe);
@@ -260,7 +267,7 @@ function createBladesSlow() {
         new THREE.Vector3(0.2, -0.19, 6.6)
     );
 
-    const points = bladeCurve.getPoints(30); 
+    const points = bladeCurve.getPoints(10); 
 
 
     const curvePath = new THREE.CurvePath();
@@ -296,8 +303,8 @@ function createBladesFast() {
     );
 
     const ghostGeometry = new THREE.CylinderGeometry(
-        radius, 
-        radius, 
+        radius * 0.99, 
+        radius * 0.99, 
         height,
         radialSegments,
         1,
