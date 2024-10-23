@@ -386,7 +386,7 @@ function bladeFoldHandler(delta) {
     }
 
 
-    if (input.toggleBladeExtension) {
+    if (input.toggleBladeExtension && cumulativeLeftEnginePower == 0) {
         bladesLeft.rotation.set(0, 0, 0);
         bladesRight.rotation.set(0, Math.PI, 0);
 
@@ -403,7 +403,7 @@ function bladeFoldHandler(delta) {
     }
 
     if (cumulativeBladeFold == 1 && cumulativeEngineFold == 0) {
-        cumulativeWingFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeWingFold + 0.01, 1) : Math.max(cumulativeWingFold - 0.01, 0);
+        cumulativeWingFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeWingFold + 0.005, 1) : Math.max(cumulativeWingFold - 0.005, 0);
     }
     
     if (cumulativeWingFold == 1) {
@@ -416,18 +416,20 @@ function bladeFoldHandler(delta) {
         engineAllowed = false;
     }
 
-    console.log(cumulativeBladeFold);
-    bladesLeft.getObjectByName('b2').rotation.set(0, 2.0944 - (cumulativeBladeFold * (Math.PI / 1.7)), 0);
-    bladesLeft.getObjectByName('b3').rotation.set(0, -2.0944 + (cumulativeBladeFold * (Math.PI / 1.7)), 0);
+    if (cumulativeLeftEnginePower == 0) {
+        bladesLeft.getObjectByName('b2').rotation.set(0, 2.0944 - (cumulativeBladeFold * (Math.PI / 1.7)), 0);
+        bladesLeft.getObjectByName('b3').rotation.set(0, -2.0944 + (cumulativeBladeFold * (Math.PI / 1.7)), 0);
 
-    bladesRight.getObjectByName('b2').rotation.set(0, 2.0944 - (cumulativeBladeFold * (Math.PI / 1.7)), 0);
-    bladesRight.getObjectByName('b3').rotation.set(0, -2.0944 + (cumulativeBladeFold * (Math.PI / 1.7 )), 0);
+        bladesRight.getObjectByName('b2').rotation.set(0, 2.0944 - (cumulativeBladeFold * (Math.PI / 1.7)), 0);
+        bladesRight.getObjectByName('b3').rotation.set(0, -2.0944 + (cumulativeBladeFold * (Math.PI / 1.7 )), 0);
 
-    wings.rotation.set(0, Math.PI / 3 * cumulativeWingFold, 0);
-    wings.position.y = 0.1 * cumulativeWingFold;
 
-    engineLeft.rotation.set(0, 0, -cumulativeEngineFold * (Math.PI / 2));
-    engineRight.rotation.set(0, 0, cumulativeEngineFold * (Math.PI / 2));
+        wings.rotation.set(0, Math.PI / 2.5 * Math.max((cumulativeWingFold - 0.3) / 0.7, 0), 0);
+        wings.position.y = 0.3 * Math.min(cumulativeWingFold / 0.3, 1);
+
+        engineLeft.rotation.set(0, 0, -cumulativeEngineFold * (Math.PI / 2));
+        engineRight.rotation.set(0, 0, cumulativeEngineFold * (Math.PI / 2));
+    }
 
 }
 
