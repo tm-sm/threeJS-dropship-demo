@@ -65,8 +65,8 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
             if (o.isMesh) o.material = modelMaterial;
         });
         gltf.scene.name = 'rampMesh';
-        ramp.position.set(-2.28, -0.58, 0);
-        gltf.scene.position.set(2.28, 0.58, 0);
+        ramp.position.set(-2.25767, -0.64789, 0);
+        gltf.scene.position.set(2.25767, 0.64789, 0);
         gltf.scene.side = THREE.DoubleSide;
         ramp.add(gltf.scene);
     }, undefined, function ( error ) {

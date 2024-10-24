@@ -399,15 +399,15 @@ function bladeFoldHandler(delta) {
     }
 
     if (cumulativeEngineFold == 0 && cumulativeWingFold == 0) {
-        cumulativeBladeFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeBladeFold + 0.01, 1) : Math.max(cumulativeBladeFold - 0.01, 0);
+        cumulativeBladeFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeBladeFold + ((0.01 * (1 - cumulativeBladeFold)) + 0.001), 1) : Math.max(cumulativeBladeFold - ((0.01 * cumulativeBladeFold) + 0.001), 0);
     }
 
     if (cumulativeBladeFold == 1 && cumulativeEngineFold == 0) {
-        cumulativeWingFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeWingFold + 0.005, 1) : Math.max(cumulativeWingFold - 0.005, 0);
+        cumulativeWingFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeWingFold + ((0.005 * (1 - cumulativeWingFold)) + 0.001), 1) : Math.max(cumulativeWingFold - ((0.005 * cumulativeWingFold) + 0.001), 0);
     }
     
     if (cumulativeWingFold == 1) {
-        cumulativeEngineFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeEngineFold + 0.01, 1) : Math.max(cumulativeEngineFold - 0.01, 0);
+        cumulativeEngineFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeEngineFold + ((0.01 * (1 - cumulativeEngineFold)) + 0.001), 1) : Math.max(cumulativeEngineFold - ((0.01 * cumulativeEngineFold) + 0.001), 0);
     }
    
     if (cumulativeBladeFold == 0) {
