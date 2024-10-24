@@ -9,7 +9,7 @@ import { setupTerrain } from './terrain.js'
 import { input } from './controls.js'
 import { loadControls } from './controls.js'
 import { loadExternalModels } from './meshCreator.js';
-import { createSweptMesh } from './sweptSurface.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 
 import { currentCamera } from './controls.js'
 
@@ -19,6 +19,7 @@ import { currentCamera } from './controls.js'
 
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer();
+renderer.shadowMap.enabled = true;
 const clock = new THREE.Clock();
 
 
@@ -311,12 +312,14 @@ var cumulativeRightEnginePower = 0.0;
 var isEnginePowered = false;
 var areBladesMoving = false;
 
+var movementFakerAux = true;
+
 function motorHandler(delta) {
 
 
     // A lot of magic numbers
-    cumulativeLeftEnginePower = (input.toggleEngine && engineAllowed) ? Math.min(cumulativeLeftEnginePower + 0.001, 1) : Math.max(cumulativeLeftEnginePower - 0.001 * (cumulativeLeftEnginePower + 0.02), 0);
-    cumulativeRightEnginePower = (input.toggleEngine && cumulativeLeftEnginePower > 0.2 && engineAllowed) ? Math.min(cumulativeRightEnginePower + 0.001, 1) : Math.max(cumulativeRightEnginePower - 0.001 * (cumulativeRightEnginePower + 0.02), 0);
+    cumulativeLeftEnginePower = (input.toggleEngine && engineAllowed) ? Math.min(cumulativeLeftEnginePower + 0.001, 1) : Math.max(cumulativeLeftEnginePower - 0.001 * (cumulativeLeftEnginePower + 0.1), 0);
+    cumulativeRightEnginePower = (input.toggleEngine && cumulativeLeftEnginePower > 0.2 && engineAllowed) ? Math.min(cumulativeRightEnginePower + 0.001, 1) : Math.max(cumulativeRightEnginePower - 0.001 * (cumulativeRightEnginePower + 0.1), 0);
 
     isEnginePowered = (cumulativeLeftEnginePower > 0.9 && cumulativeRightEnginePower > 0.9);
 
@@ -328,9 +331,9 @@ function motorHandler(delta) {
     } else if (cumulativeLeftEnginePower >= 0.4 && cumulativeLeftEnginePower < 0.9) {
         engineLeft.getObjectByName('slow').visible = false;
         engineLeft.getObjectByName('fast').visible= true;
-        bladesLeft.rotateY(2 * ((cumulativeLeftEnginePower - 0.5) / 0.9));
+        bladesLeft.rotation.y = bladesLeft.rotation.y + (2 * ((cumulativeLeftEnginePower - 0.5 / 0.9))) - ((movementFakerAux - 0.5) * 2) * (0.1);
     } else {
-        bladesLeft.rotateY(-2 * 0.6)
+        bladesLeft.rotation.y = bladesLeft.rotation.y + (-2 * 0.6) - ((movementFakerAux - 0.5) * 2) * (0.1);
     }
 
     // Right engine
@@ -341,16 +344,12 @@ function motorHandler(delta) {
     } else if (cumulativeRightEnginePower >= 0.4 && cumulativeRightEnginePower < 0.9) {
         engineRight.getObjectByName('slow').visible = false;
         engineRight.getObjectByName('fast').visible= true;
-        bladesRight.rotateY(-2 * ((cumulativeRightEnginePower - 0.5 / 0.9)));
+        bladesRight.rotation.y = bladesRight.rotation.y + (-2 * ((cumulativeRightEnginePower - 0.5 / 0.9))) + ((movementFakerAux - 0.5) * 2) * (0.1);
     } else {
-        bladesRight.rotateY(-2 * 0.6);
+        bladesRight.rotation.y = bladesRight.rotation.y + (-2 * 0.6) + ((movementFakerAux - 0.5) * 2) * (0.1);
     }
 
-    if (cumulativeLeftEnginePower > 0 || cumulativeRightEnginePower > 0) {
-
-    }
-
-
+    movementFakerAux = !movementFakerAux;
 
     engineLeft.translateX((Math.sin(delta*10)*0.0015) * cumulativeLeftEnginePower); 
     engineLeft.translateZ((Math.sin(delta*10)*0.001) * cumulativeLeftEnginePower);
@@ -370,15 +369,15 @@ function rampHandler(delta) {
     ramp.rotation.z = cumulativeRampExtension * maxRampExtension;
 }
 
-var cumulativeBladeFold = 1.0;
-var cumulativeEngineFold = 1.0;
-var cumulativeWingFold = 1.0;
+var cumulativeBladeFold = 0.0;
+var cumulativeEngineFold = 0.0;
+var cumulativeWingFold = 0.0;
 
-var bladesInPosition = true;
+var bladesInPosition = false;
 
-input.toggleBladeExtension = true;
+input.toggleBladeExtension = false;
 
-var engineAllowed = false;
+var engineAllowed = true;
 
 function bladeFoldHandler(delta) {
     if (input.toggleEngine) {
@@ -387,12 +386,16 @@ function bladeFoldHandler(delta) {
 
 
     if (input.toggleBladeExtension && cumulativeLeftEnginePower == 0) {
-        bladesLeft.rotation.set(0, 0, 0);
-        bladesRight.rotation.set(0, Math.PI, 0);
+        bladesLeft.rotation.y = bladesLeft.rotation.y % (Math.PI * 2);
+        bladesRight.rotation.y = bladesRight.rotation.y % (Math.PI * 2);
 
-        bladesInPosition = true;
-        cumulativeLeftEnginePower = 0;
-        cumulativeRightEnginePower = 0;
+        if (Math.abs(bladesLeft.rotation.y) <= 0.1 && Math.abs(bladesRight.rotation.y) >= Math.PI - 0.1 && Math.abs(bladesRight.rotation.y) <= Math.PI + 0.1) {
+            bladesInPosition = true;
+        } else {
+            bladesLeft.rotation.y += bladesLeft.rotation.y > 0 ? -0.01 : 0.01;
+            bladesRight.rotation.y += bladesRight.rotation.y > Math.PI ? -0.01 : 0.01;
+            bladesInPosition = false;
+        }
 
     } else {
         bladesInPosition = false;
@@ -422,7 +425,6 @@ function bladeFoldHandler(delta) {
 
         bladesRight.getObjectByName('b2').rotation.set(0, 2.0944 - (cumulativeBladeFold * (Math.PI / 1.7)), 0);
         bladesRight.getObjectByName('b3').rotation.set(0, -2.0944 + (cumulativeBladeFold * (Math.PI / 1.7 )), 0);
-
 
         wings.rotation.set(0, Math.PI / 2.5 * Math.max((cumulativeWingFold - 0.3) / 0.7, 0), 0);
         wings.position.y = 0.3 * Math.min(cumulativeWingFold / 0.3, 1);
@@ -477,7 +479,7 @@ const movement = {
 
 
 function createMenu() {
-    var gui = new dat.GUI( );
+    var gui = new GUI( );
     gui.domElement.id = 'gui';
 
     var f1 = gui.addFolder('controls');
@@ -511,4 +513,4 @@ addHelpers();
 loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, engines,
     engineLeft, engineRight, bladesLeft, bladesRight);
 loadControls();
-//createMenu();
+createMenu();

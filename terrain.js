@@ -15,11 +15,12 @@ export function setupTerrain(scene) {
 
     geometry.computeVertexNormals();
 
-    const material = new THREE.MeshPhongMaterial({ 
+    const material = new THREE.MeshStandardMaterial({ 
         color: 0x7D6741,
         roughness: 0.8,
         metalness: 0.0,
         side: THREE.DoubleSide,
+        flatShading: true
     }); 
 
     var terrain = new THREE.Mesh(geometry, material);

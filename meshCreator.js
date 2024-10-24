@@ -17,7 +17,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         var model = gltf.scene;
         var modelMaterial = dropshipMaterial;
         model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
         });
         gltf.scene.name = 'aiframeMesh';
         gltf.scene.side = THREE.DoubleSide;
@@ -36,7 +39,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         metalness: 0.6,
         side: THREE.DoubleSide});
         model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
         });
         gltf.scene.name = 'cockpitMesh';
         cockpit.add(gltf.scene);
@@ -48,7 +54,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         var model = gltf.scene;
         var modelMaterial = dropshipMaterial;
         model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
         });
         gltf.scene.name = 'wingsMesh';
         wings.position.x = -1;
@@ -62,7 +71,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         var model = gltf.scene;
         var modelMaterial = dropshipMaterial;
         model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
         });
         gltf.scene.name = 'rampMesh';
         ramp.position.set(-2.25767, -0.64789, 0);
@@ -77,7 +89,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         var model = gltf.scene;
         var modelMaterial = dropshipMaterial;
         model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
         });
         gltf.scene.name = 'engineRMesh';
         engineLeft.add(model);
@@ -89,7 +104,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         var model = gltf.scene;
         var modelMaterial = dropshipMaterial;
         model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
         });
         gltf.scene.name = 'engineLMesh';
         engineRight.add(model);
@@ -101,7 +119,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         var model = gltf.scene;
         var modelMaterial = dropshipMaterial;
         model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
         });
         gltf.scene.name = 'rotorRMesh';
         gltf.scene.position.z = 0.37;
@@ -116,7 +137,10 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         var model = gltf.scene;
         var modelMaterial = dropshipMaterial;
         model.traverse((o) => {
-            if (o.isMesh) o.material = modelMaterial;
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
         });
         gltf.scene.name = 'rotorLMesh';
         gltf.scene.position.z = -0.37;
