@@ -217,10 +217,10 @@ function handleMovement() {
             let heightFore = 3;
             let heightBack = 3;
 
-            let leftRayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z - 1.0);
-            let rightRayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z + 1.0);
-            let foreRayOrigin = new THREE.Vector3(shipPosition.x + 1.0, shipPosition.y, shipPosition.z);
-            let backRayOrigin = new THREE.Vector3(shipPosition.x - 1.0, shipPosition.y, shipPosition.z);
+            let leftRayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z - 3.0);
+            let rightRayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z + 3.0);
+            let foreRayOrigin = new THREE.Vector3(shipPosition.x + 3.0, shipPosition.y, shipPosition.z);
+            let backRayOrigin = new THREE.Vector3(shipPosition.x - 3.0, shipPosition.y, shipPosition.z);
 
             collisionRaycast.set(leftRayOrigin, new THREE.Vector3(0, -1, 0));
             let intersectsLeft = collisionRaycast.intersectObjects(objects);
@@ -246,7 +246,7 @@ function handleMovement() {
                 heightBack = intersectsBack[0].distance;
             }
 
-            airframe.rotation.set((1 - ((distanceToGround - 1.8) / 1.2)) * (-Math.atan((heightLeft - heightRight) / 2)), 0, (1 - ((distanceToGround - 1.8) / 1.2)) * (-Math.atan((heightFore - heightBack) / 2)));
+            airframe.rotation.set((1 - ((distanceToGround - 1.8) / 1.2)) * (-Math.atan((heightLeft - heightRight) / 6)), 0, (1 - ((distanceToGround - 1.8) / 1.2)) * (-Math.atan((heightFore - heightBack) / 6)));
 
         } else {
             inGround = false;
