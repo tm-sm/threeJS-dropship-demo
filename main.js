@@ -254,7 +254,6 @@ function handleRotationVisuals() {
     } else if (cumulativeTurningIndicator != 0) {
         cumulativeTurningIndicator -= cumulativeTurningIndicator * step * 2;
     }
-
     
     if (cumulativeTurningIndicator >= 0) {
         engineRight.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
@@ -315,8 +314,6 @@ var areBladesMoving = false;
 var movementFakerAux = true;
 
 function motorHandler(delta) {
-
-
     // A lot of magic numbers
     cumulativeLeftEnginePower = (input.toggleEngine && engineAllowed) ? Math.min(cumulativeLeftEnginePower + 0.001, 1) : Math.max(cumulativeLeftEnginePower - 0.001 * (cumulativeLeftEnginePower + 0.1), 0);
     cumulativeRightEnginePower = (input.toggleEngine && cumulativeLeftEnginePower > 0.2 && engineAllowed) ? Math.min(cumulativeRightEnginePower + 0.001, 1) : Math.max(cumulativeRightEnginePower - 0.001 * (cumulativeRightEnginePower + 0.1), 0);
@@ -386,7 +383,11 @@ function bladeFoldHandler(delta) {
 
 
     if (input.toggleBladeExtension && cumulativeLeftEnginePower == 0) {
-        bladesLeft.rotation.y = bladesLeft.rotation.y % (Math.PI * 2);
+
+        bladesLeft.rotation.y = 0;
+        bladesRight.rotation.set(0, Math.PI, 0);
+        bladesInPosition = true;
+        /*bladesLeft.rotation.y = bladesLeft.rotation.y % (Math.PI * 2);
         bladesRight.rotation.y = bladesRight.rotation.y % (Math.PI * 2);
 
         if (Math.abs(bladesLeft.rotation.y) <= 0.1 && Math.abs(bladesRight.rotation.y) >= Math.PI - 0.1 && Math.abs(bladesRight.rotation.y) <= Math.PI + 0.1) {
@@ -395,22 +396,28 @@ function bladeFoldHandler(delta) {
             bladesLeft.rotation.y += bladesLeft.rotation.y > 0 ? -0.01 : 0.01;
             bladesRight.rotation.y += bladesRight.rotation.y > Math.PI ? -0.01 : 0.01;
             bladesInPosition = false;
-        }
+        }*/
 
     } else {
         bladesInPosition = false;
     }
 
     if (cumulativeEngineFold == 0 && cumulativeWingFold == 0) {
-        cumulativeBladeFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeBladeFold + ((0.01 * (1 - cumulativeBladeFold)) + 0.001), 1) : Math.max(cumulativeBladeFold - ((0.01 * cumulativeBladeFold) + 0.001), 0);
+        cumulativeBladeFold = input.toggleBladeExtension && bladesInPosition ?
+         Math.min(cumulativeBladeFold + ((0.01 * (1 - cumulativeBladeFold)) + 0.001), 1) 
+         : Math.max(cumulativeBladeFold - ((0.01 * cumulativeBladeFold) + 0.001), 0);
     }
 
     if (cumulativeBladeFold == 1 && cumulativeEngineFold == 0) {
-        cumulativeWingFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeWingFold + ((0.005 * (1 - cumulativeWingFold)) + 0.001), 1) : Math.max(cumulativeWingFold - ((0.005 * cumulativeWingFold) + 0.001), 0);
+        cumulativeWingFold = input.toggleBladeExtension && bladesInPosition ?
+         Math.min(cumulativeWingFold + ((0.005 * (1 - cumulativeWingFold)) + 0.001), 1) 
+         : Math.max(cumulativeWingFold - ((0.005 * cumulativeWingFold) + 0.001), 0);
     }
     
     if (cumulativeWingFold == 1) {
-        cumulativeEngineFold = input.toggleBladeExtension && bladesInPosition ? Math.min(cumulativeEngineFold + ((0.01 * (1 - cumulativeEngineFold)) + 0.001), 1) : Math.max(cumulativeEngineFold - ((0.01 * cumulativeEngineFold) + 0.001), 0);
+        cumulativeEngineFold = input.toggleBladeExtension && bladesInPosition ?
+         Math.min(cumulativeEngineFold + ((0.01 * (1 - cumulativeEngineFold)) + 0.001), 1) 
+         : Math.max(cumulativeEngineFold - ((0.01 * cumulativeEngineFold) + 0.001), 0);
     }
    
     if (cumulativeBladeFold == 0) {
