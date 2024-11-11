@@ -10,7 +10,7 @@ const dropshipMaterial = new THREE.MeshStandardMaterial({color: 0xbbbbbb,
 
 
 export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, engines,
-     engineLeft, engineRight, bladesLeft, bladesRight) {
+     engineLeft, engineRight, bladesLeft, bladesRight, skidLeft, skidRight) {
 
     const loader = new GLTFLoader();
     loader.load( 'public/models/dropship/airframe.glb', function ( gltf ) {
@@ -151,6 +151,39 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         console.error( error );
     });
 
+    loader.load( 'public/models/dropship/skid_l.glb', function ( gltf ) {
+        var model = gltf.scene;
+        var modelMaterial = dropshipMaterial;
+        model.traverse((o) => {
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
+        });
+        gltf.scene.name = 'skidLMesh';
+        gltf.scene.scale.z = -1;
+        gltf.scene.position.set(-0.60729, 0.49738, 0.63169);
+        skidLeft.add(model);
+    }, undefined, function ( error ) {
+        console.error( error );
+    });
+
+    loader.load( 'public/models/dropship/skid_l.glb', function ( gltf ) {
+        var model = gltf.scene;
+        var modelMaterial = dropshipMaterial;
+        model.traverse((o) => {
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
+        });
+        gltf.scene.name = 'skidRMesh';
+        gltf.scene.position.set(-0.60729, 0.49738, -0.63169);
+        skidRight.add(model);
+    }, undefined, function ( error ) {
+        console.error( error );
+    });
+
     addBlades(scene, bladesLeft, bladesRight, engineLeft, engineRight);
 
 
@@ -162,15 +195,19 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
     engines.position.x = -0.48602;
     engines.position.y = 0.598318;
 
+    
+
     wings.add(engines);
     airframe.add(wings);
     airframe.add(ramp);
     airframe.add(cockpit);
+    airframe.add(skidLeft);
+    airframe.add(skidRight);
 
     pitchDropshipMovement.add(airframe);
     globalDropshipMovement.add(pitchDropshipMovement);
 
-    globalDropshipMovement.position.y = 30;
+
     scene.add(globalDropshipMovement);
 }
 

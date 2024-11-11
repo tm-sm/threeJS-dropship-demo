@@ -17,6 +17,7 @@ const keyMap = {
     69: { key: 'e', input: 'down', state: true },      // E key
     73: { key: 'i', input: 'toggleEngine', toggle: true }, // I key
     80: { key: 'p', input: 'toggleRamp', toggle: true }, // P key
+    71: { key: 'g', input: 'toggleGear', toggle: true }, // G key
     72: { key: 'h', input: 'toggleBladeExtension', toggle: true }, // H key
     49: { action: () => {} },                         // Camera (Num 1)
     50: { action: () => currentCamera = chaseCamera },  // Num 2
@@ -39,6 +40,7 @@ export var input = {
     toggleEngine: false,
     toggleRamp: false,
     toggleBladeExtension: false,
+    toggleGear: false,
 };
 
 function handleKeyEvent(e, isKeyDown) {

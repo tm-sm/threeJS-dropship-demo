@@ -65,6 +65,9 @@ const engines = new THREE.Group();
 const bladesLeft = new THREE.Group();
 const bladesRight = new THREE.Group();
 
+const skidLeft = new THREE.Group();
+const skidRight = new THREE.Group();
+
 const collisionRaycast = new THREE.Raycaster();
 
 airframe.add(fpvCamera);
@@ -95,10 +98,10 @@ document.body.appendChild( renderer.domElement );
 // ==========================================
 
 function addHelpers() {
-    const axesHelper = new THREE.AxesHelper( 5 );
+    /*const axesHelper = new THREE.AxesHelper( 5 );
     const box = new THREE.BoxHelper( engineRight.getObjectByName('propLMesh'), 0xffff00 );
     scene.add(box);
-    scene.add( axesHelper );
+    scene.add( axesHelper );*/
 }
 
 // ==========================================
@@ -137,9 +140,9 @@ var verticalSpeed = 0;
 function handleMovement() {
 
     // -- Movement along the ship's X axis --
-    if (input.forward && isEnginePowered) {
+    if (input.forward && isEnginePowered && !inGround) {
         totalForwardAcceleration = Math.min(totalForwardAcceleration + forwardAcceleration, maxForwardAcceleration);
-    } else if (input.backward && isEnginePowered) {
+    } else if (input.backward && isEnginePowered && !inGround) {
         totalForwardAcceleration = Math.max(totalForwardAcceleration + backwardAcceleration, maxBackwardAcceleration);
     } else {
         // No input detected, the ship should start to slow down
@@ -150,9 +153,9 @@ function handleMovement() {
     // Dynamic max speed calculation
     forwardSpeed = totalForwardAcceleration - (airDrag * forwardSpeed);
 
-    if (input.left && isEnginePowered) {
+    if (input.left && isEnginePowered && !inGround) {
         totalHorizontalAcceleration = Math.min(totalHorizontalAcceleration + leftAcceleration, maxLeftAcceleration);
-    } else if (input.right && isEnginePowered) {
+    } else if (input.right && isEnginePowered && !inGround) {
         totalHorizontalAcceleration = Math.max(totalHorizontalAcceleration + rightAcceleration, maxRightAcceleration);
     } else {
         totalHorizontalAcceleration -= (airDrag * horizontalSpeed) * 0.4;
@@ -161,9 +164,9 @@ function handleMovement() {
     horizontalSpeed = totalHorizontalAcceleration - (airDrag * horizontalSpeed);
 
     // -- Rotation along the ship's Y axis --
-    if (input.turnLeft && isEnginePowered) {
+    if (input.turnLeft && isEnginePowered && !inGround) {
         totalTurningAcceleration = Math.min(totalTurningAcceleration + leftTurnAcceleration, maxLeftTurningAcceleration);
-    } else if (input.turnRight && isEnginePowered) {
+    } else if (input.turnRight && isEnginePowered && !inGround) {
         totalTurningAcceleration = Math.max(totalTurningAcceleration + rightTurnAcceleration, maxRightTurningAcceleration);
     } else {
         totalTurningAcceleration -= (airDrag * turningSpeed) * 2;
@@ -201,9 +204,55 @@ function handleMovement() {
     if (intersects.length > 0) {
         const distanceToGround = intersects[0].distance;
         movement.height = distanceToGround;
-        if (distanceToGround < 4) {
+        if (distanceToGround < 4 && !gearInPosition) {
             globalDropshipMovement.translateY(4 - distanceToGround);
+        } else if (distanceToGround < 1.8 && gearInPosition) {
+            globalDropshipMovement.translateY(1.8 - distanceToGround);
         }
+        if (distanceToGround < 3) {
+            inGround = true;
+
+            let heightLeft = 3;
+            let heightRight = 3;
+            let heightFore = 3;
+            let heightBack = 3;
+
+            let leftRayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z - 1.0);
+            let rightRayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z + 1.0);
+            let foreRayOrigin = new THREE.Vector3(shipPosition.x + 1.0, shipPosition.y, shipPosition.z);
+            let backRayOrigin = new THREE.Vector3(shipPosition.x - 1.0, shipPosition.y, shipPosition.z);
+
+            collisionRaycast.set(leftRayOrigin, new THREE.Vector3(0, -1, 0));
+            let intersectsLeft = collisionRaycast.intersectObjects(objects);
+            if (intersectsLeft.length > 0) {
+                heightLeft = intersectsLeft[0].distance;
+            }
+
+            collisionRaycast.set(rightRayOrigin, new THREE.Vector3(0, -1, 0));
+            let intersectsRight = collisionRaycast.intersectObjects(objects);
+            if (intersectsRight.length > 0) {
+                heightRight = intersectsRight[0].distance;
+            }
+
+            collisionRaycast.set(foreRayOrigin, new THREE.Vector3(0, -1, 0));
+            let intersectsFore = collisionRaycast.intersectObjects(objects);
+            if (intersectsFore.length > 0) {
+                heightFore = intersectsFore[0].distance;
+            }
+
+            collisionRaycast.set(backRayOrigin, new THREE.Vector3(0, -1, 0));
+            let intersectsBack = collisionRaycast.intersectObjects(objects);
+            if (intersectsBack.length > 0) {
+                heightBack = intersectsBack[0].distance;
+            }
+
+            airframe.rotation.set((1 - ((distanceToGround - 1.8) / 1.2)) * (-Math.atan((heightLeft - heightRight) / 2)), 0, (1 - ((distanceToGround - 1.8) / 1.2)) * (-Math.atan((heightFore - heightBack) / 2)));
+
+        } else {
+            inGround = false;
+        }
+    } else {
+        inGround = false;
     }
 
     // Update movement values for debugging purposes
@@ -235,9 +284,9 @@ const maxIndividualPropTiltBackward = Math.PI / 24;
 const maxAirframeTilt = Math.PI / 20;
 
 function handleRotationVisuals() {
-    if (input.forward && isEnginePowered) {
+    if (input.forward && isEnginePowered && !inGround) {
         cumulativeForwardIndicator = Math.min(cumulativeForwardIndicator + step, 1);
-    } else if (input.backward && isEnginePowered) {
+    } else if (input.backward && isEnginePowered && !inGround) {
         cumulativeForwardIndicator = Math.max(cumulativeForwardIndicator - step, -1);
     } else if (cumulativeForwardIndicator != 0) {
         cumulativeForwardIndicator -= step * cumulativeForwardIndicator * 1.2;
@@ -247,9 +296,9 @@ function handleRotationVisuals() {
     engines.rotation.z = (cumulativeForwardIndicator >= 0) ? -(maxPropsPitchDown * cumulativeForwardIndicator) : -(maxPropsPitchUp * cumulativeForwardIndicator);
     pitchDropshipMovement.rotation.z = (cumulativeForwardIndicator >= 0) ? -(maxAirframePitchDown * cumulativeForwardIndicator) : -(maxAirframePitchUp * cumulativeForwardIndicator);
 
-    if (input.turnLeft && isEnginePowered) {
+    if (input.turnLeft && isEnginePowered && !inGround) {
         cumulativeTurningIndicator = Math.min(cumulativeTurningIndicator + step, 1);
-    } else if (input.turnRight && isEnginePowered) {
+    } else if (input.turnRight && isEnginePowered && !inGround) {
         cumulativeTurningIndicator = Math.max(cumulativeTurningIndicator - step, -1);
     } else if (cumulativeTurningIndicator != 0) {
         cumulativeTurningIndicator -= cumulativeTurningIndicator * step * 2;
@@ -265,9 +314,9 @@ function handleRotationVisuals() {
 
     airframe.rotation.x = - (cumulativeTurningIndicator * maxAirframeTilt);
 
-    if (input.left && isEnginePowered) {
+    if (input.left && isEnginePowered && !inGround) {
         cumulativeHorizontalIndicator = Math.max(cumulativeHorizontalIndicator - step * 4, -1);
-    } else if (input.right && isEnginePowered) {
+    } else if (input.right && isEnginePowered && !inGround) {
         cumulativeHorizontalIndicator = Math.min(cumulativeHorizontalIndicator + step * 4, 1);
     } else if (cumulativeHorizontalIndicator != 0) {
         cumulativeHorizontalIndicator -= step * cumulativeHorizontalIndicator * 1.3;
@@ -296,7 +345,7 @@ function handleRotationVisuals() {
 }
 
 function addBaseMovement(delta) {
-    if (isEnginePowered) {
+    if (isEnginePowered && !inGround) {
         airframe.translateX(Math.sin(delta) * 0.003);
         airframe.translateY(Math.cos(delta) * 0.002);
         airframe.translateZ(Math.sin(delta) * 0.0024);
@@ -370,7 +419,7 @@ var cumulativeBladeFold = 0.0;
 var cumulativeEngineFold = 0.0;
 var cumulativeWingFold = 0.0;
 
-var bladesInPosition = false;
+var bladesInPosition = true;
 
 input.toggleBladeExtension = false;
 
@@ -442,6 +491,22 @@ function bladeFoldHandler(delta) {
 
 }
 
+var cumulativeGearExtension = 1.0;
+
+var gearInPosition = true;
+
+var inGround = true;
+
+function gearHandler(delta) {
+
+    cumulativeGearExtension = (input.toggleGear || inGround) ? Math.min(1.0, cumulativeGearExtension + 0.05) : Math.max(0.0, cumulativeGearExtension - 0.05);
+
+    gearInPosition = cumulativeGearExtension == 1.0;
+
+    skidLeft.position.y = cumulativeGearExtension * -0.8;
+    skidRight.position.y = cumulativeGearExtension * -0.8;
+}
+
 
 // ==========================================
 // CAMERA HANDLERS
@@ -458,13 +523,15 @@ function updateCameras() {
 function animate() {
     let delta = clock.getElapsedTime();
 
-    handleMovement(delta);
+    gearHandler(delta);
     handleRotationVisuals(delta);
     addBaseMovement(delta);
     updateCameras(delta);
     motorHandler(delta);
     rampHandler(delta);
     bladeFoldHandler(delta);
+    handleMovement(delta);
+
 
     controls.update();
 	renderer.render( scene, currentCamera );
@@ -518,6 +585,7 @@ setLights(scene);
 terrain = setupTerrain(scene, terrain);
 addHelpers();
 loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, engines,
-    engineLeft, engineRight, bladesLeft, bladesRight);
+    engineLeft, engineRight, bladesLeft, bladesRight, skidLeft, skidRight);
 loadControls();
+input.toggleGear = true;
 createMenu();
