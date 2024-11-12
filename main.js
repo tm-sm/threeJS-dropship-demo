@@ -216,11 +216,20 @@ function handleMovement() {
             let heightRight = 3;
             let heightFore = 3;
             let heightBack = 3;
+            // Assume `globalDropshipMovement.rotation.y` gives the yaw in radians
+            let yaw = globalDropshipMovement.rotation.y;
 
-            let leftRayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z - 3.0);
-            let rightRayOrigin = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z + 3.0);
-            let foreRayOrigin = new THREE.Vector3(shipPosition.x + 3.0, shipPosition.y, shipPosition.z);
-            let backRayOrigin = new THREE.Vector3(shipPosition.x - 3.0, shipPosition.y, shipPosition.z);
+            // Create offset vectors for left, right, fore, and back directions
+            let leftOffset = new THREE.Vector3(Math.cos(globalDropshipMovement.rotation.y) * 3.0, 0, Math.sin(globalDropshipMovement.rotation.y) * -3.0);
+            let rightOffset = new THREE.Vector3(Math.cos(globalDropshipMovement.rotation.y) * 3.0, 0, Math.sin(globalDropshipMovement.rotation.y) * 3.0);
+            let foreOffset = new THREE.Vector3(Math.cos(globalDropshipMovement.rotation.y) * 3.0, 0, Math.sin(globalDropshipMovement.rotation.y) * 3.0);
+            let backOffset = new THREE.Vector3(Math.cos(globalDropshipMovement.rotation.y) * -3.0, 0, Math.sin(globalDropshipMovement.rotation.y) * 3.0);
+
+            // Now add the rotated offsets to the ship's position to get the ray origins
+            let leftRayOrigin = new THREE.Vector3().copy(shipPosition).add(leftOffset);
+            let rightRayOrigin = new THREE.Vector3().copy(shipPosition).add(rightOffset);
+            let foreRayOrigin = new THREE.Vector3().copy(shipPosition).add(foreOffset);
+            let backRayOrigin = new THREE.Vector3().copy(shipPosition).add(backOffset);
 
             collisionRaycast.set(leftRayOrigin, new THREE.Vector3(0, -1, 0));
             let intersectsLeft = collisionRaycast.intersectObjects(objects);
