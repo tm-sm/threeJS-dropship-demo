@@ -18,7 +18,7 @@ import { currentCamera } from './controls.js'
 // ==========================================
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog( 0xcccccc, 10, 300 );
+scene.fog = new THREE.Fog( 0xcccccc, 10, 700 );
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
 const clock = new THREE.Clock();
