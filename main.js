@@ -18,6 +18,7 @@ import { currentCamera } from './controls.js'
 // ==========================================
 
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog( 0xcccccc, 10, 300 );
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
 const clock = new THREE.Clock();
@@ -314,11 +315,11 @@ function handleRotationVisuals() {
     }
     
     if (cumulativeTurningIndicator >= 0) {
-        engineRight.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
-        engineLeft.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
+        engineRight.rotation.z = -maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        engineLeft.rotation.z = maxIndividualPropTiltForward * cumulativeTurningIndicator;
     } else {
-        engineLeft.rotation.z = -maxIndividualPropTiltBackward * cumulativeTurningIndicator;
-        engineRight.rotation.z = maxIndividualPropTiltForward * cumulativeTurningIndicator;
+        engineLeft.rotation.z = maxIndividualPropTiltBackward * cumulativeTurningIndicator;
+        engineRight.rotation.z = -maxIndividualPropTiltForward * cumulativeTurningIndicator;
     }
 
     airframe.rotation.x = - (cumulativeTurningIndicator * maxAirframeTilt);

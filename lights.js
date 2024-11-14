@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 // Set up lighting
 export function setLights(scene) {
-    const ambientLight = new THREE.AmbientLight(0x333333, 1.5);
+    const ambientLight = new THREE.AmbientLight(0x88888888, 7.5);
     scene.add(ambientLight);
 
     const sunCoords = new THREE.Vector3(10000, 1000, 200);
