@@ -10,7 +10,7 @@ import { input } from './controls.js';
 import { loadControls } from './controls.js';
 import { loadExternalModels } from './meshCreator.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import { Rocket } from './projectile.js';
+import { Rocket, SmokeParticle } from './otherObjects.js';
 
 import { currentCamera } from './controls.js';
 
@@ -524,7 +524,12 @@ let lastFireTime = 0;
 let fireCooldown = 0.3; 
 
 function weaponsHandler(delta) {
-    rockets.forEach(rocket => rocket.move(terrain));
+    rockets.forEach(rocket => {
+        let objects = [];
+        objects.push(terrain)
+        rocket.move(objects);
+    }
+    );
 
     rockets = rockets.filter(rocket => {
         if (rocket.checkHit()) {
@@ -539,8 +544,9 @@ function weaponsHandler(delta) {
 
         if (currentTime - lastFireTime >= fireCooldown) {
             var forward = new THREE.Vector3(1, 0, 0);
-            var globalDirection = forward.applyQuaternion(globalDropshipMovement.quaternion);
-            var globalDirection = forward.applyQuaternion(pitchDropshipMovement.quaternion);
+            var combinedQuaternion = globalDropshipMovement.quaternion.clone().multiply(pitchDropshipMovement.quaternion);
+
+            var globalDirection = forward.applyQuaternion(combinedQuaternion);
             
             let rocket = new Rocket(
                 globalDropshipMovement.position.x,
@@ -556,6 +562,24 @@ function weaponsHandler(delta) {
             lastFireTime = currentTime;
         }
     }
+}
+
+var particles = [];
+
+function handleParticles() {
+    particles.forEach(particle => particle.update());
+}
+
+export function removeParticleFromScene(particle) {
+    scene.remove(particle.getParticleObject());
+    particles = particles.filter(value => {
+        return particle !== value
+    })
+}
+
+export function addParticleToScene(particle) {
+    scene.add(particle.getParticleObject());
+    particles.push(particle);
 }
 
 
@@ -583,6 +607,7 @@ function animate() {
     bladeFoldHandler(delta);
     handleMovement(delta);
     weaponsHandler(delta);
+    handleParticles(delta);
 
 
     controls.update();
