@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createSweptMesh } from './sweptSurface.js';
 
 const dropshipMaterial = new THREE.MeshStandardMaterial({color: 0xbbbbbb,
-    roughness: .2,
+    roughness: 0.8,
     metalness: 1.0,
     emissive: 0x111111
 });
@@ -325,7 +325,7 @@ function createBladesSlow() {
         new THREE.Vector3(0, 0, 0.1),
         new THREE.Vector3(0, 0, 1),
         new THREE.Vector3(0, 0, 4),
-        new THREE.Vector3(0.2, -0.19, 6.6)
+        new THREE.Vector3(0.2, -0.1, 4)
     );
 
     const points = bladeCurve.getPoints(10); 
@@ -347,7 +347,7 @@ function createBladesSlow() {
 
 function createBladesFast() {
     const height = 0.01;
-    const radius = 6.6;
+    const radius = 4;
     const radialSegments = 8;
     const thetaStart = 0;
     const thetaLength = Math.PI / 6;

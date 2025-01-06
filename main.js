@@ -4,21 +4,22 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { setLights } from './lights.js'
-import { setupTerrain } from './terrain.js'
-import { input } from './controls.js'
-import { loadControls } from './controls.js'
+import { setLights } from './lights.js';
+import { setupTerrain } from './terrain.js';
+import { input } from './controls.js';
+import { loadControls } from './controls.js';
 import { loadExternalModels } from './meshCreator.js';
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { Rocket } from './projectile.js';
 
-import { currentCamera } from './controls.js'
+import { currentCamera } from './controls.js';
 
 // ==========================================
 // GLOBAL CONSTANTS AND VARIABLES
 // ==========================================
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog( 0xcccccc, 10, 700 );
+scene.fog = new THREE.Fog( 0xcccccc, 10, 1500 );
 const renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
 const clock = new THREE.Clock();
@@ -282,12 +283,12 @@ var cumulativeHorizontalIndicator = 0.0;
 var cumulativeTurningIndicator = 0.0;
 var cumulativeVerticalIndicator = 0.0;
 
-const maxAirframePitchDown = Math.PI / 10;
-const maxPropsPitchDown = Math.PI / 12;
+const maxAirframePitchDown = Math.PI / 24;
+const maxPropsPitchDown = Math.PI / 2 - maxAirframePitchDown;
 const maxBladePitch = Math.PI / 8;
 
-const maxAirframePitchUp = Math.PI / 12;
-const maxPropsPitchUp = Math.PI / 10;
+const maxAirframePitchUp = Math.PI / 20;
+const maxPropsPitchUp = Math.PI / 16;
 
 const maxIndividualPropTiltForward = Math.PI / 16;
 const maxIndividualPropTiltBackward = Math.PI / 24;
@@ -517,6 +518,46 @@ function gearHandler(delta) {
     skidRight.position.y = cumulativeGearExtension * -0.8;
 }
 
+var rockets = []
+
+let lastFireTime = 0; 
+let fireCooldown = 0.3; 
+
+function weaponsHandler(delta) {
+    rockets.forEach(rocket => rocket.move(terrain));
+
+    rockets = rockets.filter(rocket => {
+        if (rocket.checkHit()) {
+            scene.remove(rocket.getRocketObject());
+            return false; 
+        }
+        return true;
+    });
+
+    if (input.fireRocket) {
+        let currentTime = performance.now() / 1000; 
+
+        if (currentTime - lastFireTime >= fireCooldown) {
+            var forward = new THREE.Vector3(1, 0, 0);
+            var globalDirection = forward.applyQuaternion(globalDropshipMovement.quaternion);
+            var globalDirection = forward.applyQuaternion(pitchDropshipMovement.quaternion);
+            
+            let rocket = new Rocket(
+                globalDropshipMovement.position.x,
+                globalDropshipMovement.position.y,
+                globalDropshipMovement.position.z,
+                globalDirection, 
+                10
+            );
+            
+            scene.add(rocket.getRocketObject());
+            rockets.push(rocket);
+
+            lastFireTime = currentTime;
+        }
+    }
+}
+
 
 // ==========================================
 // CAMERA HANDLERS
@@ -541,6 +582,7 @@ function animate() {
     rampHandler(delta);
     bladeFoldHandler(delta);
     handleMovement(delta);
+    weaponsHandler(delta);
 
 
     controls.update();
@@ -584,6 +626,8 @@ function createMenu() {
     f2.add(movement, 'accT', -20, 20).step(0.1).name('accT').listen();
     f2.add(movement, 'speed', -400, 400).step(0.1).name('speed').listen();
     f2.add(movement, 'turn', -20, 20).step(0.1).name('turn').listen();
+
+    gui.close();
 }
 
 

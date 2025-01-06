@@ -3,12 +3,12 @@ import * as THREE from 'three';
 
 // Set up lighting
 export function setLights(scene) {
-    const ambientLight = new THREE.AmbientLight(0x88888888, 7.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2);
     scene.add(ambientLight);
 
     const sunCoords = new THREE.Vector3(10000, 1000, 200);
 
-    const directionalLight = new THREE.DirectionalLight(0xfdfbd3, 2.5);
+    const directionalLight = new THREE.DirectionalLight(0xfdfbd3, 1);
     directionalLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
     directionalLight.lookAt(0, 0, 0);
     directionalLight.castShadow = true;

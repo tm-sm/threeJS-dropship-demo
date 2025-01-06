@@ -19,6 +19,7 @@ const keyMap = {
     80: { key: 'p', input: 'toggleRamp', toggle: true }, // P key
     71: { key: 'g', input: 'toggleGear', toggle: true }, // G key
     72: { key: 'h', input: 'toggleBladeExtension', toggle: true }, // H key
+    32: { key: ' ', input: 'fireRocket', toggle: false }, // space key
     49: { action: () => {} },                         // Camera (Num 1)
     50: { action: () => currentCamera = chaseCamera },  // Num 2
     51: { action: () => currentCamera = sideViewCamera }, // Num 3
@@ -41,6 +42,7 @@ export var input = {
     toggleRamp: false,
     toggleBladeExtension: false,
     toggleGear: false,
+    fireRocket: false,
 };
 
 function handleKeyEvent(e, isKeyDown) {
