@@ -70,6 +70,8 @@ const bladesRight = new THREE.Group();
 const skidLeft = new THREE.Group();
 const skidRight = new THREE.Group();
 
+const rocketMount = new THREE.Group();
+
 const collisionRaycast = new THREE.Raycaster();
 
 airframe.add(fpvCamera);
@@ -580,8 +582,9 @@ function weaponsHandler(delta) {
 }
 
 const particlesGroups = []; 
+const priorityParticles = [];
 let currentGroupIndex = 0;
-const NUM_GROUPS = 100; 
+const NUM_GROUPS = 60; 
 
 for (let i = 0; i < NUM_GROUPS; i++) {
     particlesGroups.push([]);
@@ -591,11 +594,22 @@ function handleParticles() {
     if (particlesGroups.length === 0) return;
 
     particlesGroups[currentGroupIndex].forEach(particle => particle.update());
+    priorityParticles.forEach(particle => particle.update());
 
     currentGroupIndex = (currentGroupIndex + 1) % NUM_GROUPS;
 }
 
 export function removeParticleFromScene(particle) {
+    scene.remove(particle.getParticleObject());
+
+
+    const index = priorityParticles.indexOf(particle);
+    if (index !== -1) {
+        priorityParticles.splice(index, 1);
+    }
+}
+
+export function removeNonPriorityParticleFromScene(particle) {
     scene.remove(particle.getParticleObject());
 
     for (const group of particlesGroups) {
@@ -608,6 +622,11 @@ export function removeParticleFromScene(particle) {
 }
 
 export function addParticleToScene(particle) {
+    scene.add(particle.getParticleObject());
+    priorityParticles.push(particle);
+}
+
+export function addNonPriorityParticleToScene(particle) {
     scene.add(particle.getParticleObject());
 
     let smallestGroup = particlesGroups[0];
@@ -701,7 +720,7 @@ setLights(scene);
 terrain = setupTerrain(scene, terrain);
 addHelpers();
 loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, engines,
-    engineLeft, engineRight, bladesLeft, bladesRight, skidLeft, skidRight);
+    engineLeft, engineRight, bladesLeft, bladesRight, skidLeft, skidRight, rocketMount);
 loadControls();
 input.toggleGear = true;
 createMenu();

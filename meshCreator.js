@@ -10,7 +10,7 @@ const dropshipMaterial = new THREE.MeshStandardMaterial({color: 0xbbbbbb,
 
 
 export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipMovement, airframe, wings, cockpit, ramp, engines,
-     engineLeft, engineRight, bladesLeft, bladesRight, skidLeft, skidRight) {
+     engineLeft, engineRight, bladesLeft, bladesRight, skidLeft, skidRight, rocketMount) {
 
     const loader = new GLTFLoader();
     loader.load( 'public/models/dropship/airframe.glb', function ( gltf ) {
@@ -63,6 +63,21 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         wings.position.x = -1;
         wings.add(gltf.scene);
         gltf.scene.position.x = 1;
+    }, undefined, function ( error ) {
+        console.error( error );
+    });
+
+    loader.load( 'public/models/dropship/rocket_mount.glb', function ( gltf ) {
+        var model = gltf.scene;
+        var modelMaterial = dropshipMaterial;
+        model.traverse((o) => {
+            if (o.isMesh) {
+                o.material = modelMaterial;  
+                o.castShadow = true;
+            } 
+        });
+        gltf.scene.name = 'rocketMount';
+        rocketMount.add(gltf.scene);
     }, undefined, function ( error ) {
         console.error( error );
     });
@@ -203,6 +218,8 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
     airframe.add(cockpit);
     airframe.add(skidLeft);
     airframe.add(skidRight);
+
+    airframe.add(rocketMount);
 
     pitchDropshipMovement.add(airframe);
     globalDropshipMovement.add(pitchDropshipMovement);
