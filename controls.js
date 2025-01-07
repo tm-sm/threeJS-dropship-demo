@@ -38,7 +38,7 @@ export var input = {
     turnLeft: false,
     up: false,
     down: false,
-    toggleEngine: false,
+    toggleEngine: true,
     toggleRamp: false,
     toggleBladeExtension: false,
     toggleGear: false,

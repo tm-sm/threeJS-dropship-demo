@@ -366,10 +366,10 @@ function addBaseMovement(delta) {
     }
 }
 
-var cumulativeLeftEnginePower = 0.0;
-var cumulativeRightEnginePower = 0.0;
-var isEnginePowered = false;
-var areBladesMoving = false;
+var cumulativeLeftEnginePower = 1.0;
+var cumulativeRightEnginePower = 1.0;
+var isEnginePowered = true;
+var areBladesMoving = true;
 
 var movementFakerAux = true;
 
@@ -521,7 +521,8 @@ function gearHandler(delta) {
 var rockets = []
 
 let lastFireTime = 0; 
-let fireCooldown = 0.3; 
+let fireCooldown = 0.3;
+var rocketCount = 16; 
 
 function weaponsHandler(delta) {
     rockets.forEach(rocket => {
@@ -539,7 +540,7 @@ function weaponsHandler(delta) {
         return true;
     });
 
-    if (input.fireRocket) {
+    if (input.fireRocket && rocketCount > 0) {
         let currentTime = performance.now() / 1000; 
 
         if (currentTime - lastFireTime >= fireCooldown) {
@@ -548,38 +549,74 @@ function weaponsHandler(delta) {
 
             var globalDirection = forward.applyQuaternion(combinedQuaternion);
             
-            let rocket = new Rocket(
+
+            const offsetDistance = 2;
+
+            let sideDirection = new THREE.Vector3(0, 1, 0).cross(globalDirection).normalize();
+
+            let offset = sideDirection.multiplyScalar(rocketCount % 2 === 0 ? offsetDistance : -offsetDistance);
+
+            let rocketPosition = new THREE.Vector3(
                 globalDropshipMovement.position.x,
                 globalDropshipMovement.position.y,
-                globalDropshipMovement.position.z,
-                globalDirection, 
+                globalDropshipMovement.position.z
+            ).add(offset);
+
+            let rocket = new Rocket(
+                rocketPosition.x,
+                rocketPosition.y,
+                rocketPosition.z,
+                globalDirection,
                 10
             );
             
             scene.add(rocket.getRocketObject());
             rockets.push(rocket);
+            rocketCount--;
 
             lastFireTime = currentTime;
         }
     }
 }
 
-var particles = [];
+const particlesGroups = []; 
+let currentGroupIndex = 0;
+const NUM_GROUPS = 100; 
+
+for (let i = 0; i < NUM_GROUPS; i++) {
+    particlesGroups.push([]);
+}
 
 function handleParticles() {
-    particles.forEach(particle => particle.update());
+    if (particlesGroups.length === 0) return;
+
+    particlesGroups[currentGroupIndex].forEach(particle => particle.update());
+
+    currentGroupIndex = (currentGroupIndex + 1) % NUM_GROUPS;
 }
 
 export function removeParticleFromScene(particle) {
     scene.remove(particle.getParticleObject());
-    particles = particles.filter(value => {
-        return particle !== value
-    })
+
+    for (const group of particlesGroups) {
+        const index = group.indexOf(particle);
+        if (index !== -1) {
+            group.splice(index, 1);
+            break;
+        }
+    }
 }
 
 export function addParticleToScene(particle) {
     scene.add(particle.getParticleObject());
-    particles.push(particle);
+
+    let smallestGroup = particlesGroups[0];
+    for (const group of particlesGroups) {
+        if (group.length < smallestGroup.length) {
+            smallestGroup = group;
+        }
+    }
+    smallestGroup.push(particle);
 }
 
 
