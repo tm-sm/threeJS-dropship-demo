@@ -338,8 +338,12 @@ function handleRotationVisuals() {
         cumulativeHorizontalIndicator -= step * cumulativeHorizontalIndicator * 1.3;
     }
 
-    airframe.rotation.x += cumulativeHorizontalIndicator * maxAirframeTilt * 1.5;
-
+    if (cumulativeForwardIndicator < 0.9) {
+        airframe.rotation.x += cumulativeHorizontalIndicator * maxAirframeTilt * 1.5;
+    } else {
+        airframe.rotation.y = - cumulativeHorizontalIndicator * maxAirframeTilt * 0.5;
+    }
+    
     if (input.up) {
         cumulativeVerticalIndicator = Math.min(cumulativeVerticalIndicator + step, 1);
     } else if (input.down) {

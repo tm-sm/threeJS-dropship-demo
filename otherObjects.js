@@ -61,17 +61,7 @@ export class Rocket {
                             .copy(this.rocketGroup.position)
                             .add(translationVector.clone().multiplyScalar(t));
 
-                        let smokeParticle;
-                        if (particlePool.length > 0) {
-                            smokeParticle = particlePool.pop();
-                            smokeParticle.sprite.position.set(intermediatePosition.x, intermediatePosition.y, intermediatePosition.z);
-                            smokeParticle.ttl = 20; 
-                            smokeParticle.isDead = false;
-                            smokeParticle.sprite.material.opacity = 0.5;
-                            smokeParticle.sprite.scale.set(1, 1, 1); 
-                        } else {
-                            smokeParticle = new SmokeParticle(intermediatePosition.x, intermediatePosition.y, intermediatePosition.z, 20);
-                        }
+                        let smokeParticle = new SmokeParticle(intermediatePosition.x, intermediatePosition.y, intermediatePosition.z, 20);
                     }
                     this.rocketFuel--;
                 } else {
@@ -136,9 +126,16 @@ export class ExplosionParticle {
             opacity: 1 
         });
 
+        const spriteMaterial3 = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            color: 0xBDA781,
+            opacity: 1 
+        });
+
         this.explosion = new THREE.Group();
 
-        this.middleSprite = new THREE.Sprite(spriteMaterial);
+        this.middleSprite = new THREE.Sprite(spriteMaterial3);
         this.middleSprite.scale.x = 10;
         this.middleSprite.scale.y = 10;
         this.middleSprite.scale.z = 10;
