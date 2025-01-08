@@ -15,13 +15,21 @@ export function setupTerrain(scene) {
 
     geometry.computeVertexNormals();
 
-    const material = new THREE.MeshStandardMaterial({ 
+    const textureLoader = new THREE.TextureLoader();
+    const sandNormal = textureLoader.load('./public/textures/sandNormalMap.png', () => {
+        sandNormal.wrapS = THREE.RepeatWrapping;
+        sandNormal.wrapT = THREE.RepeatWrapping;
+        sandNormal.repeat.set(10, 10); // Adjust tiling for larger terrains
+    });
+    
+    const material = new THREE.MeshStandardMaterial({
         color: 0x7D6741,
         roughness: 0.9,
         metalness: 0.5,
         side: THREE.DoubleSide,
-        flatShading: true
-    }); 
+        normalMap: sandNormal,
+        flatShading: false // Ensure smooth shading for normal map effects
+    });
 
     var terrain = new THREE.Mesh(geometry, material);
     terrain.castShadow = true;

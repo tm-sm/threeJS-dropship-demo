@@ -8,7 +8,7 @@ export function setLights(scene) {
 
     const sunCoords = new THREE.Vector3(10000, 1000, 200);
 
-    const directionalLight = new THREE.DirectionalLight(0xfdfbd3, 1);
+    const directionalLight = new THREE.DirectionalLight(0xfdfbd3, 3);
     directionalLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
     directionalLight.lookAt(0, 0, 0);
     directionalLight.castShadow = true;

@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createSweptMesh } from './sweptSurface.js';
 
+
 const dropshipMaterial = new THREE.MeshStandardMaterial({color: 0xbbbbbb,
     roughness: 0.8,
     metalness: 1.0,
@@ -33,7 +34,7 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         var model = gltf.scene;
         var modelMaterial = new THREE.MeshLambertMaterial({color: 0x999999,
         transparent: true,
-        opacity: 0.1,
+        opacity: 0.01,
         emissive: 0xea6d1a,
         roughness: 0.0,
         metalness: 0.6,

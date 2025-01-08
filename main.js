@@ -317,7 +317,10 @@ function handleRotationVisuals() {
         cumulativeTurningIndicator -= cumulativeTurningIndicator * step * 2;
     }
     
-    if (cumulativeTurningIndicator >= 0) {
+    if (cumulativeForwardIndicator >= 0.9) {
+        engineRight.rotation.z = 0;
+        engineLeft.rotation.z = 0;
+    } else if (cumulativeTurningIndicator >= 0) {
         engineRight.rotation.z = -maxIndividualPropTiltBackward * cumulativeTurningIndicator;
         engineLeft.rotation.z = maxIndividualPropTiltForward * cumulativeTurningIndicator;
     } else {
@@ -569,7 +572,9 @@ function weaponsHandler(delta) {
                 rocketPosition.y,
                 rocketPosition.z,
                 globalDirection,
-                10
+                7,
+                pitchDropshipMovement.rotation.x,
+                globalDropshipMovement.rotation.y
             );
             
             scene.add(rocket.getRocketObject());
@@ -584,7 +589,7 @@ function weaponsHandler(delta) {
 const particlesGroups = []; 
 const priorityParticles = [];
 let currentGroupIndex = 0;
-const NUM_GROUPS = 60; 
+const NUM_GROUPS = 20; 
 
 for (let i = 0; i < NUM_GROUPS; i++) {
     particlesGroups.push([]);
