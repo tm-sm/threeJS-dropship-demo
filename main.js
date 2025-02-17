@@ -399,6 +399,8 @@ function motorHandler(delta) {
         engineLeft.getObjectByName('fast').visible= true;
         bladesLeft.rotation.y = bladesLeft.rotation.y + (2 * ((cumulativeLeftEnginePower - 0.5 / 0.9))) - ((movementFakerAux - 0.5) * 2) * (0.1);
     } else {
+        engineLeft.getObjectByName('slow').visible = false;
+        engineLeft.getObjectByName('fast').visible= true;
         bladesLeft.rotation.y = bladesLeft.rotation.y + (-2 * 0.6) - ((movementFakerAux - 0.5) * 2) * (0.1);
     }
 
@@ -412,6 +414,8 @@ function motorHandler(delta) {
         engineRight.getObjectByName('fast').visible= true;
         bladesRight.rotation.y = bladesRight.rotation.y + (-2 * ((cumulativeRightEnginePower - 0.5 / 0.9))) + ((movementFakerAux - 0.5) * 2) * (0.1);
     } else {
+        engineRight.getObjectByName('slow').visible = false;
+        engineRight.getObjectByName('fast').visible= true;
         bladesRight.rotation.y = bladesRight.rotation.y + (-2 * 0.6) + ((movementFakerAux - 0.5) * 2) * (0.1);
     }
 

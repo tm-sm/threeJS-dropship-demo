@@ -16,10 +16,10 @@ export function setupTerrain(scene) {
     geometry.computeVertexNormals();
 
     const textureLoader = new THREE.TextureLoader();
-    const sandNormal = textureLoader.load('./public/textures/sandNormalMap.png', () => {
-        sandNormal.wrapS = THREE.RepeatWrapping;
-        sandNormal.wrapT = THREE.RepeatWrapping;
-        sandNormal.repeat.set(10, 10); // Adjust tiling for larger terrains
+    const sandBump = textureLoader.load('./public/textures/sand_bump.jpg', () => {
+        sandBump.wrapS = THREE.RepeatWrapping;
+        sandBump.wrapT = THREE.RepeatWrapping;
+        sandBump.repeat.set(10, 10); // Adjust tiling for larger terrains
     });
     
     const material = new THREE.MeshStandardMaterial({
@@ -27,7 +27,7 @@ export function setupTerrain(scene) {
         roughness: 0.9,
         metalness: 0.5,
         side: THREE.DoubleSide,
-        normalMap: sandNormal,
+        bumpMap: sandBump,
         flatShading: false // Ensure smooth shading for normal map effects
     });
 

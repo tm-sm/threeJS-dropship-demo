@@ -3,10 +3,16 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createSweptMesh } from './sweptSurface.js';
 
 
-const dropshipMaterial = new THREE.MeshStandardMaterial({color: 0xbbbbbb,
-    roughness: 0.8,
-    metalness: 1.0,
-    emissive: 0x111111
+const textureLoader = new THREE.TextureLoader();
+const normalMapDropship = textureLoader.load('public/textures/dropship_normal.jpg');
+const roughnessMapDropship = textureLoader.load('public/textures/dropship_roughness.webp');
+
+const dropshipMaterial = new THREE.MeshStandardMaterial({
+    color: 0x1e1f23,
+    roughness: 0.2,
+    metalness: 0.3,
+    roughnessMap: roughnessMapDropship,
+    normalMap: normalMapDropship,
 });
 
 
@@ -30,25 +36,34 @@ export function loadExternalModels(scene, globalDropshipMovement, pitchDropshipM
         console.error( error );
     });
 
-    loader.load( 'public/models/dropship/cockpit.glb', function ( gltf ) {
+    const alphaMapCockpit = textureLoader.load('public/textures/cockpit_alpha.png');
+    const roughnessMapCockpit = textureLoader.load('public/textures/cockpit_roughness.webp');
+    
+    loader.load('public/models/dropship/cockpit.glb', function (gltf) {
         var model = gltf.scene;
-        var modelMaterial = new THREE.MeshLambertMaterial({color: 0x999999,
-        transparent: true,
-        opacity: 0.01,
-        emissive: 0xea6d1a,
-        roughness: 0.0,
-        metalness: 0.6,
-        side: THREE.DoubleSide});
+        var modelMaterial = new THREE.MeshStandardMaterial({
+            color: 0x999999,
+            transparent: true,
+            opacity: 1,
+            emissive: 0xea6d1a,
+            roughness: 0.0,
+            metalness: 0.6,
+            alphaMap: alphaMapCockpit, 
+            roughnessMap: roughnessMapCockpit, 
+            side: THREE.DoubleSide
+        });
+    
         model.traverse((o) => {
             if (o.isMesh) {
-                o.material = modelMaterial;  
+                o.material = modelMaterial;
                 o.castShadow = true;
-            } 
+            }
         });
+    
         gltf.scene.name = 'cockpitMesh';
         cockpit.add(gltf.scene);
-    }, undefined, function ( error ) {
-        console.error( error );
+    }, undefined, function (error) {
+        console.error(error);
     });
 
     loader.load( 'public/models/dropship/wings.glb', function ( gltf ) {
